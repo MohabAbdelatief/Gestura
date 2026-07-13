@@ -10,24 +10,6 @@
 
 > A short screen recording of controlling playback with hand gestures.
 
-## Screenshots
-
-### The App
-
-| Home | Mini-Player | Now Playing | Queue |
-|---|---|---|---|
-| ![Home](assets/home.png) | ![Mini-Player](assets/home-miniplayer.png) | ![Now Playing](assets/now-playing.png) | ![Queue](assets/queue.png) |
-
-| Library | Search | Settings | Gesture Recognizer |
-|---|---|---|---|
-| ![Library](assets/library.png) | ![Search](assets/search.png) | ![Settings](assets/settings.png) | ![Recognizer](assets/gestura.png) |
-
-### Onboarding
-
-| Welcome | Gestures | Privacy | All Set |
-|---|---|---|---|
-| ![Welcome](assets/onboarding-1.png) | ![Gestures](assets/onboarding-2.png) | ![Privacy](assets/onboarding-3.png) | ![All Set](assets/onboarding-4.png) |
-
 ## What is Gestura?
 
 Gestura is a full local-library music player for iPhone whose standout feature is **gesture control**: hold a hand pose in front of the camera and Gestura plays, pauses, skips, or favorites the current track — completely hands-free. It's built for the moments when your hands are busy or dirty (cooking, driving, working out) and reaching for the screen or talking to a voice assistant isn't practical.
@@ -109,6 +91,23 @@ Swift · SwiftUI · CoreML · Vision · Create ML · AVFoundation · MediaPlayer
 git clone https://github.com/MohabAbdelatief/Gestura.git
 open Gestura/Gestura.xcodeproj
 ```
+## Screenshots
+
+### The App
+
+| Home | Mini-Player | Now Playing | Queue |
+|---|---|---|---|
+| ![Home](assets/home.png) | ![Mini-Player](assets/home-miniplayer.png) | ![Now Playing](assets/now-playing.png) | ![Queue](assets/queue.png) |
+
+| Library | Search | Settings | Gesture Recognizer |
+|---|---|---|---|
+| ![Library](assets/library.png) | ![Search](assets/search.png) | ![Settings](assets/settings.png) | ![Recognizer](assets/gestura.png) |
+
+### Onboarding
+
+| Welcome | Gestures | Privacy | All Set |
+|---|---|---|---|
+| ![Welcome](assets/onboarding-1.png) | ![Gestures](assets/onboarding-2.png) | ![Privacy](assets/onboarding-3.png) | ![All Set](assets/onboarding-4.png) |
 
 > **Run on a real device.** Gesture control needs the front camera, and playback uses your on-device music library — neither works in the Simulator. Grant camera access when prompted, enable Gestura in Settings, and play a track.
 
