@@ -5,9 +5,7 @@
 ![Swift](https://img.shields.io/badge/Swift-orange) ![SwiftUI](https://img.shields.io/badge/SwiftUI-blue) ![CoreML](https://img.shields.io/badge/CoreML-lightblue) ![Vision](https://img.shields.io/badge/Vision-purple) ![Platform](https://img.shields.io/badge/iOS-lightgrey)
 
 ## Demo
-
 ![Gesture control demo](assets/demo.gif)
-
 > A short screen recording of controlling playback with hand gestures.
 
 ## What is Gestura?
