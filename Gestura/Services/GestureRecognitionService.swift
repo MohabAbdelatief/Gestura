@@ -107,7 +107,7 @@ final class GestureRecognitionService: NSObject {
     }
     // MARK: - AUTHORIZATION
 
-    func requestCameraAuthorization() async -> Bool {
+    static func requestCameraAuthorization() async -> Bool {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             return true
@@ -127,7 +127,7 @@ final class GestureRecognitionService: NSObject {
         // there's no point gating a feature that can't run.
         guard handPoseClassifier != nil else { return .modelUnavailable }
 
-        let authorized = await requestCameraAuthorization()
+        let authorized = await Self.requestCameraAuthorization()
         guard authorized else { return .cameraDenied }
 
         sessionQueue.async {

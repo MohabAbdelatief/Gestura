@@ -9,7 +9,8 @@ import SwiftUI
 struct OnboardingView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding =
         false
-    @AppStorage("gesturaEnabled") private var gesturaEnabled = false
+    @AppStorage(GesturaSettings.enabledKey) private var gesturaEnabled: Bool =
+        GesturaSettings.enabledDefault
     @State private var step: OnboardingStep = .welcome
     @State private var gesturesAppeared = false
     @State private var doneAppeared = false
@@ -198,8 +199,11 @@ struct OnboardingView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
 
-                Button("Maybe later") { hasCompletedOnboarding = true }
-                    .foregroundStyle(.secondary)
+                Button("Maybe later") {
+                    gesturaEnabled = false
+                    hasCompletedOnboarding = true
+                }
+                .foregroundStyle(.secondary)
             }
             .padding(.bottom)
         }
@@ -235,9 +239,23 @@ struct OnboardingView: View {
     }
 
     private func move(_ delta: Int) {
-        guard let s = OnboardingStep(rawValue: step.rawValue + delta) else {
+        guard let next = OnboardingStep(rawValue: step.rawValue + delta) else {
             return
         }
-        withAnimation { step = s }
+
+        // Moving forward off the privacy screen is the moment the user has
+        // just been told what the camera is for, so ask then: the system
+        // prompt arrives with context, and well before ContentView's music
+        // library prompt. A denial isn't fatal — the recognizer's
+        // `recoveryView(for: .cameraDenied)` handles it later.
+        guard step == .camera, delta > 0 else {
+            withAnimation { step = next }
+            return
+        }
+
+        Task {
+            _ = await GestureRecognitionService.requestCameraAuthorization()
+            withAnimation { step = next }
+        }
     }
 }

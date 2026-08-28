@@ -13,7 +13,8 @@ struct SettingsTabView: View {
 
     @ObservedObject var libraryStore: LibraryStore = .shared
     @ObservedObject var viewModel: PlayerViewModel
-    @AppStorage("gesturaEnabled") private var gesturaEnabled: Bool = false
+    @AppStorage(GesturaSettings.enabledKey) private var gesturaEnabled: Bool =
+        GesturaSettings.enabledDefault
     @AppStorage("songSortingOption") private var songSortingOption: SortOption =
         .title
     @AppStorage(RecognizerSensitivity.appStorageKey)
@@ -59,7 +60,7 @@ struct SettingsTabView: View {
                 }
                 Section(header: Text("Gestura")) {
                     Toggle(
-                        "Enable Gestura Controls",
+                        "Gesture Control",
                         isOn: $gesturaEnabled
                     )
 

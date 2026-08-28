@@ -175,6 +175,36 @@ class PlayerViewModel: ObservableObject {
         playCurrentQueueTrack()
     }
 
+    /// Why `startPlayback()` couldn't begin a session, so callers can say
+    /// something accurate instead of conflating "still loading" with "empty".
+    enum StartPlaybackResult {
+        case started(Track)
+        case libraryLoading
+        case libraryEmpty
+        case accessDenied
+    }
+
+    /// Starts playback when nothing is loaded, so a gesture can begin a
+    /// session without touching the screen. Prefers the most recent track,
+    /// falling back to a random song on a fresh install.
+    @discardableResult
+    func startPlayback() -> StartPlaybackResult {
+        if let current = currentTrack { return .started(current) }
+        guard !musicLibrary.permissionDenied else { return .accessDenied }
+        guard musicLibrary.hasLoaded else { return .libraryLoading }
+
+        if let recent = musicLibrary.recentlyPlayedTracks.first {
+            play(recent, in: musicLibrary.recentlyPlayedTracks)
+            return .started(recent)
+        }
+
+        guard let song = musicLibrary.songs.randomElement() else {
+            return .libraryEmpty
+        }
+        play(song, in: musicLibrary.songs)
+        return .started(song)
+    }
+
     func nextTrack() {
         musicService.nextTrack()
     }

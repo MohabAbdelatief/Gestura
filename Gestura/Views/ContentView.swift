@@ -13,14 +13,17 @@ struct ContentView: View {
 
     @AppStorage("hapticFeedbackEnabled") private var hapticFeedbackEnabled:
         Bool = true
-    @AppStorage("gesturaEnabled") private var gesturaEnabled: Bool = false
+    @AppStorage(GesturaSettings.enabledKey) private var gesturaEnabled: Bool =
+        GesturaSettings.enabledDefault
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding =
         false
 
     // MARK: - STATE
 
     @State private var showNowPlaying: Bool = false
-    @State private var selectedTab: AppTab = .home
+    @State private var selectedTab: AppTab =
+        GesturaSettings.isEnabled
+        ? .gestura : .home
 
     // MARK: - INIT
 
@@ -68,23 +71,20 @@ struct ContentView: View {
             Tab("Home", systemImage: "house", value: .home) {
                 HomeView(viewModel: viewModel, musicLibrary: musicLibrary)
             }
-            if gesturaEnabled {
-                Tab("Gestura", systemImage: "hand.raised", value: .gestura) {
-                    GesturaTabView(
-                        viewModel: viewModel,
-                        gestureViewModel: gestureViewModel,
-                    )
-                }
+
+            Tab("Gestura", systemImage: "hand.raised", value: .gestura) {
+                GesturaTabView(
+                    viewModel: viewModel,
+                    gestureViewModel: gestureViewModel,
+                )
             }
+
             Tab(value: .search, role: .search) {
                 SearchTabView(viewModel: viewModel, musicLibrary: musicLibrary)
             }
             Tab("Library", systemImage: "music.note.list", value: .library) {
                 LibraryHubView(viewModel: viewModel, musicLibrary: musicLibrary)
             }
-        }
-        .onChange(of: gesturaEnabled) { _, isOn in
-            if !isOn { selectedTab = .home }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .tabViewBottomAccessory(isEnabled: viewModel.currentTrack != nil) {
@@ -113,6 +113,10 @@ struct ContentView: View {
         .environmentObject(dispatcher)
         .sensoryFeedback(.success, trigger: feedbackCenter.trigger) { _, _ in
             hapticFeedbackEnabled
+        }
+        .onChange(of: hasCompletedOnboarding) { _, completed in
+            guard completed else { return }
+            selectedTab = gesturaEnabled ? .gestura : .home
         }
         .onAppear {
             musicLibrary.loadSongs()

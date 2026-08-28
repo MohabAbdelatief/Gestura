@@ -5,11 +5,11 @@
 //  Created by Mohab Abdelatief on 20/05/2026.
 //
 
-import Foundation
 import Combine
+import Foundation
 
 @MainActor
-final class PlaybackIntentDispatcher : ObservableObject {
+final class PlaybackIntentDispatcher: ObservableObject {
     private let player: PlayerViewModel
     private let library: LibraryStore
     private let feedback: FeedbackCenter
@@ -28,7 +28,17 @@ final class PlaybackIntentDispatcher : ObservableObject {
         switch intent {
         case .togglePlayPause:
             switch player.togglePlayPause() {
-            case nil: feedback.show("No song playing")
+            case nil:
+                switch player.startPlayback() {
+                case .started(let track):
+                    feedback.show("Playing \(track.title)")
+                case .libraryLoading:
+                    feedback.show("Loading your library…")
+                case .libraryEmpty:
+                    feedback.show("No songs in your library")
+                case .accessDenied:
+                    feedback.show("Music access needed")
+                }
             case true?: feedback.show("Playing")
             case false?: feedback.show("Paused")
             }
@@ -38,7 +48,7 @@ final class PlaybackIntentDispatcher : ObservableObject {
         case .previousTrack:
             player.previousTrack()
             feedback.show("Previous Song")
-        case .setFavorite(let trackID ,let shouldBeFavorited):
+        case .setFavorite(let trackID, let shouldBeFavorited):
             let isCurrentlyFavorited = library.isFavorite(id: trackID)
             if isCurrentlyFavorited == shouldBeFavorited {
                 if shouldBeFavorited {

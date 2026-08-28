@@ -18,7 +18,8 @@ struct GesturaTabView: View {
     @ObservedObject var gestureViewModel: GestureViewModel
     @ObservedObject private var libraryStore = LibraryStore.shared
     // MARK: - APP STORAGE
-    @AppStorage("gesturaEnabled") private var gesturaEnabled: Bool = false
+    @AppStorage(GesturaSettings.enabledKey) private var gesturaEnabled: Bool =
+        GesturaSettings.enabledDefault
 
     // MARK: - ENVIRONMENT
 
@@ -29,53 +30,57 @@ struct GesturaTabView: View {
     var body: some View {
         Group {
             if gesturaEnabled {
-                if viewModel.currentTrack != nil {
-                    Group {
-                        if let reason = gestureViewModel.unavailableReason {
-                            recoveryView(for: reason)
-                        } else {
-                            activeRecognizerView
-                        }
+                Group {
+                    if let reason = gestureViewModel.unavailableReason {
+                        recoveryView(for: reason)
+                    } else {
+                        activeRecognizerView
                     }
-                    .onAppear {
-                        isRecognizerVisible = true
+                }
+                .onAppear {
+                    isRecognizerVisible = true
+                    UIApplication.shared.isIdleTimerDisabled = true
+                    Task { await gestureViewModel.start() }
+                }
+                .onDisappear {
+                    isRecognizerVisible = false
+                    UIApplication.shared.isIdleTimerDisabled = false
+                    gestureViewModel.stop()
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    // Stop the camera when the app leaves the foreground
+                    // (backs the privacy promise that recording stops) and
+                    // resume on return — but only while this screen shows.
+                    // .inactive is transient (permission dialog, Control
+                    // Center) so we ignore it and let interruption handling
+                    // in the service cover in-app interruptions.
+                    guard isRecognizerVisible else { return }
+                    switch newPhase {
+                    case .active:
                         UIApplication.shared.isIdleTimerDisabled = true
                         Task { await gestureViewModel.start() }
-                    }
-                    .onDisappear {
-                        isRecognizerVisible = false
+                    case .background:
                         UIApplication.shared.isIdleTimerDisabled = false
                         gestureViewModel.stop()
+                    case .inactive:
+                        break
+                    @unknown default:
+                        break
                     }
-                    .onChange(of: scenePhase) { _, newPhase in
-                        // Stop the camera when the app leaves the foreground
-                        // (backs the privacy promise that recording stops) and
-                        // resume on return — but only while this screen shows.
-                        // .inactive is transient (permission dialog, Control
-                        // Center) so we ignore it and let interruption handling
-                        // in the service cover in-app interruptions.
-                        guard isRecognizerVisible else { return }
-                        switch newPhase {
-                        case .active:
-                            UIApplication.shared.isIdleTimerDisabled = true
-                            Task { await gestureViewModel.start() }
-                        case .background:
-                            UIApplication.shared.isIdleTimerDisabled = false
-                            gestureViewModel.stop()
-                        case .inactive:
-                            break
-                        @unknown default:
-                            break
-                        }
-                    }
-                } else {
-                    ContentUnavailableView(
-                        "Play a Song to Activate Gestura",
-                        systemImage: "music.note",
-                        description: Text(
-                            "Pick a song from your library to start using hand gestures."
-                        )
+                }
+            } else {
+                ContentUnavailableView {
+                    Label(
+                        "Gesture Control Is Off",
+                        systemImage: "hand.raised.slash"
                     )
+                } description: {
+                    Text(
+                        "Turn it back on to control playback without touching your phone."
+                    )
+                } actions: {
+                    Button("Turn On Gesture Control") { gesturaEnabled = true }
+                        .buttonStyle(.borderedProminent)
                 }
             }
 
