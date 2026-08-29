@@ -101,7 +101,7 @@ struct ContentView: View {
                 set: { _ in }  // dismissal happens only via the flag
             )
         ) {
-            OnboardingView()
+            OnboardingView(musicLibrary: musicLibrary)
         }
         .overlay(alignment: .bottom) {
             FeedbackHUD()
@@ -118,7 +118,10 @@ struct ContentView: View {
             selectedTab = gesturaEnabled ? .gestura : .home
         }
         .onAppear {
-            musicLibrary.loadSongs()
+            // Onboarding asks for library access on the screen that explains
+            // it, so only load directly for people who are past that flow —
+            // otherwise the system prompt lands on the welcome step.
+            if hasCompletedOnboarding { musicLibrary.loadSongs() }
             viewModel.observeNowPlaying()
         }
     }

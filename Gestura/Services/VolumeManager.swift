@@ -27,7 +27,7 @@ class VolumeManager: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        activateAudioSession()
+        readInitialVolume()
         startPollingSliderValue()
     }
 
@@ -46,23 +46,16 @@ class VolumeManager: NSObject, ObservableObject {
     }
 
     // MARK: - HELPERS
-    private func activateAudioSession() {
-        Task.detached(priority: .userInitiated) { [weak self] in
-            let session = AVAudioSession.sharedInstance()
-            do {
-                try session.setCategory(.playback, mode: .default)
-                try session.setActive(true)
-                await log(
-                    "✅ Session activated. outputVolume:",
-                    session.outputVolume
-                )
-            } catch {
-                await log("❌ Session error:", error)
-            }
-            let current = session.outputVolume
-            guard let self else { return }
-            await MainActor.run { self.volume = current }
-        }
+    /// Seeds the published volume from the system.
+    ///
+    /// Deliberately reads without activating a session. `MPMusicPlayerController`
+    /// plays out of process, so it owns audio from our point of view — claiming
+    /// a non-mixing `.playback` session here only picks a fight we lose (the
+    /// console showed the session being interrupted the moment music started),
+    /// and it would cut off whatever the user already had playing at launch.
+    /// `outputVolume` reads fine without it.
+    private func readInitialVolume() {
+        volume = AVAudioSession.sharedInstance().outputVolume
     }
 
     private func startPollingSliderValue() {

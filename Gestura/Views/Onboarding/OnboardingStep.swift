@@ -8,5 +8,8 @@
 import Foundation
 
 enum OnboardingStep: Int, CaseIterable {
-    case welcome, gestures, camera, done
+    // `library` sits second on purpose: someone who only streams from Spotify
+    // should find that out before investing in the gesture and camera screens,
+    // not after finishing onboarding into an empty library.
+    case welcome, library, gestures, camera, done
 }

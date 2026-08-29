@@ -7,6 +7,8 @@
 import SwiftUI
 
 struct OnboardingView: View {
+    let musicLibrary: MusicLibrary
+
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding =
         false
     @AppStorage(GesturaSettings.enabledKey) private var gesturaEnabled: Bool =
@@ -20,6 +22,7 @@ struct OnboardingView: View {
             Group {
                 switch step {
                 case .welcome: welcomeStep
+                case .library: libraryStep
                 case .gestures: gesturesStep
                 case .camera: cameraStep
                 case .done: doneStep
@@ -64,6 +67,54 @@ struct OnboardingView: View {
             Spacer()
         }
     }
+    private var libraryStep: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: "music.note.house.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.tint)
+                .symbolRenderingMode(.hierarchical)
+
+            Text("Plays your own library")
+                .font(.title.bold())
+                .multilineTextAlignment(.center)
+
+            VStack(alignment: .leading, spacing: 16) {
+                infoRow(
+                    "music.note.list",
+                    "Apple Music",
+                    "Songs you've added to your library, including anything downloaded for offline listening."
+                )
+                infoRow(
+                    "arrow.down.circle.fill",
+                    "Found automatically",
+                    "Audio already synced or purchased on this iPhone shows up on its own — there's nothing to import."
+                )
+                infoRow(
+                    "xmark.circle.fill",
+                    "Not Spotify or other streaming apps",
+                    "Those services keep playback inside their own apps, so Gestura can't see or control them.",
+                    symbolColor: .secondary
+                )
+            }
+            .padding(.horizontal)
+
+            HStack(spacing: 10) {
+                Image(systemName: "lightbulb.fill")
+                    .foregroundStyle(.tint)
+                Text(
+                    "Library looking empty? Add or download a few songs in **Apple Music** first."
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+            .padding(.top, 4)
+            .padding(.horizontal)
+
+            Spacer()
+        }
+    }
+
     private var gesturesStep: some View {
         VStack(spacing: 16) {
             Spacer()
@@ -134,17 +185,17 @@ struct OnboardingView: View {
                 .font(.title.bold())
 
             VStack(alignment: .leading, spacing: 16) {
-                privacyRow(
+                infoRow(
                     "eye.slash.fill",
                     "Nothing is recorded",
                     "The camera reads your hand pose live and discards each frame."
                 )
-                privacyRow(
+                infoRow(
                     "iphone",
                     "Stays on your phone",
                     "Recognition runs entirely on-device — nothing is uploaded."
                 )
-                privacyRow(
+                infoRow(
                     "bolt.slash.fill",
                     "Only while you're using it",
                     "The camera turns off the moment you leave the Gestura tab."
@@ -155,13 +206,16 @@ struct OnboardingView: View {
         }
     }
 
-    private func privacyRow(_ symbol: String, _ title: String, _ detail: String)
-        -> some View
-    {
+    private func infoRow(
+        _ symbol: String,
+        _ title: String,
+        _ detail: String,
+        symbolColor: Color = .accentColor
+    ) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: symbol)
                 .font(.title3)
-                .foregroundStyle(.tint)
+                .foregroundStyle(symbolColor)
                 .frame(width: 32)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)
@@ -243,18 +297,23 @@ struct OnboardingView: View {
             return
         }
 
-        // Moving forward off the privacy screen is the moment the user has
-        // just been told what the camera is for, so ask then: the system
-        // prompt arrives with context, and well before ContentView's music
-        // library prompt. A denial isn't fatal — the recognizer's
-        // `recoveryView(for: .cameraDenied)` handles it later.
-        guard step == .camera, delta > 0 else {
-            withAnimation { step = next }
-            return
-        }
-
-        Task {
-            _ = await GestureRecognitionService.requestCameraAuthorization()
+        // Each permission is asked for on the way out of the screen that
+        // explains it, so the system prompt always arrives with context.
+        // Neither denial is fatal: the recognizer's
+        // `recoveryView(for: .cameraDenied)` and `musicLibrary.permissionDenied`
+        // both handle it later.
+        switch (step, delta > 0) {
+        case (.library, true):
+            Task {
+                await musicLibrary.requestAccess()
+                withAnimation { step = next }
+            }
+        case (.camera, true):
+            Task {
+                _ = await GestureRecognitionService.requestCameraAuthorization()
+                withAnimation { step = next }
+            }
+        default:
             withAnimation { step = next }
         }
     }

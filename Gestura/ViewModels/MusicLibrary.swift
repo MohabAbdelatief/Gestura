@@ -77,21 +77,31 @@ class MusicLibrary: ObservableObject {
 
     // MARK: - FUNCTIONS
 
+    /// Prompts for library access if needed, then starts loading on success.
+    ///
+    /// Awaits only the permission prompt, not the fetch, so onboarding can move
+    /// on the moment the user answers instead of sitting on a spinner while a
+    /// large library reads.
+    func requestAccess() async {
+        guard await musicService.requestAuthorization() else {
+            permissionDenied = true  // ← tell the UI
+            return
+        }
+        fetchSongs()
+    }
+
+    /// Fire-and-forget entry point for callers that just want the library
+    /// populated and have no step to advance.
     func loadSongs() {
-        musicService.requestAuthorization { [weak self] authorized in
-            guard let self else { return }
+        Task { await requestAccess() }
+    }
 
-            guard authorized else {
-                self.permissionDenied = true  // ← tell the UI
-                return
-            }
-
-            Task.detached(priority: .userInitiated) {
-                let fetchedSongs = self.musicService.fetchAllSongs()
-                await MainActor.run {
-                    self.songs = fetchedSongs
-                    self.hasLoaded = true
-                }
+    private func fetchSongs() {
+        Task.detached(priority: .userInitiated) {
+            let fetchedSongs = self.musicService.fetchAllSongs()
+            await MainActor.run {
+                self.songs = fetchedSongs
+                self.hasLoaded = true
             }
         }
     }

@@ -47,6 +47,17 @@ class MusicService: ObservableObject {
 
     // MARK: - AUTHORIZATION
 
+    /// Async form of the completion-based variant below, mirroring
+    /// `GestureRecognitionService.requestCameraAuthorization()` so onboarding
+    /// can wait for the user's answer before advancing a step.
+    func requestAuthorization() async -> Bool {
+        await withCheckedContinuation { continuation in
+            requestAuthorization { authorized in
+                continuation.resume(returning: authorized)
+            }
+        }
+    }
+
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         MPMediaLibrary.requestAuthorization { [weak self] status in
             DispatchQueue.main.async {
