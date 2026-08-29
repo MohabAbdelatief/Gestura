@@ -30,6 +30,17 @@ struct NowPlayingView: View {
         )
     }
 
+    // MARK: - COMPUTED PROPERTIES
+
+    /// Whether the current track carries lyrics worth opening.
+    ///
+    /// `MPMediaItem.lyrics` only returns lyrics embedded in the file's own
+    /// metadata — Apple Music catalog songs don't vend them through
+    /// MediaPlayer at all — so for most libraries this is false.
+    private var hasLyrics: Bool {
+        !(viewModel.currentTrack?.lyrics ?? "").isEmpty
+    }
+
     // MARK: - VIEW
 
     var body: some View {
@@ -71,6 +82,9 @@ struct NowPlayingView: View {
 
     private var trackInfoView: some View {
         HStack {
+            // Held in the layout even with nothing to show, so the title
+            // stays centred against the favourite button; hidden rather than
+            // removed so there's no dead end to tap.
             Button {
                 showLyrics = true
             } label: {
@@ -81,6 +95,9 @@ struct NowPlayingView: View {
                     .glassEffect(.regular, in: Circle())
             }
             .accessibilityLabel("Lyrics")
+            .opacity(hasLyrics ? 1 : 0)
+            .disabled(!hasLyrics)
+            .accessibilityHidden(!hasLyrics)
 
             Spacer()
             VStack() {

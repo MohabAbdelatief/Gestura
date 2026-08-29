@@ -9,19 +9,19 @@ import SwiftUI
 
 struct LyricsView: View {
     @ObservedObject var viewModel: PlayerViewModel
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
-        if let lyrics = viewModel.currentTrack?.lyrics, !lyrics.isEmpty {
-            ScrollView {
-                Text(lyrics)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        } else {
-            ContentUnavailableView(
-                "No Lyrics",
-                systemImage: "quote.bubble",
-                description: Text("Current lyrics feature is bad, we are working on a better one.")
-            )
+        ScrollView {
+            Text(viewModel.currentTrack?.lyrics ?? "")
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // NowPlayingView only offers the button for tracks that carry lyrics,
+        // but the track can change while this sheet is up. Leave rather than
+        // sit on a blank scroll view.
+        .onChange(of: viewModel.currentTrack?.lyrics) { _, lyrics in
+            if (lyrics ?? "").isEmpty { dismiss() }
         }
     }
 }
