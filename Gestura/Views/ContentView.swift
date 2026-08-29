@@ -21,9 +21,7 @@ struct ContentView: View {
     // MARK: - STATE
 
     @State private var showNowPlaying: Bool = false
-    @State private var selectedTab: AppTab =
-        GesturaSettings.isEnabled
-        ? .gestura : .home
+    @State private var selectedTab: AppTab = .home
 
     // MARK: - INIT
 
@@ -76,6 +74,7 @@ struct ContentView: View {
                 GesturaTabView(
                     viewModel: viewModel,
                     gestureViewModel: gestureViewModel,
+                    musicLibrary: musicLibrary
                 )
             }
 

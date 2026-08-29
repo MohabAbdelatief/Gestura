@@ -16,6 +16,7 @@ struct GesturaTabView: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
     @ObservedObject var viewModel: PlayerViewModel
     @ObservedObject var gestureViewModel: GestureViewModel
+    @ObservedObject var musicLibrary: MusicLibrary
     @ObservedObject private var libraryStore = LibraryStore.shared
     // MARK: - APP STORAGE
     @AppStorage(GesturaSettings.enabledKey) private var gesturaEnabled: Bool =
@@ -187,11 +188,75 @@ struct GesturaTabView: View {
         }
     }
 
+    /// Shown on the recognizer when nothing is playing. `artworkView` and
+    /// `songInfoRow` both collapse to nothing without a track, so without this
+    /// the screen the app now opens to would be blank — and it wouldn't say
+    /// that an open palm starts playback from here.
+    @ViewBuilder
+    private var idlePrompt: some View {
+        switch viewModel.pendingStart {
+        case .resume(let track):
+            idleMessage(
+                "hand.raised.fill",
+                "Ready when you are",
+                "Hold up an open palm to play \(track.title)."
+            )
+        case .shuffleLibrary:
+            idleMessage(
+                "shuffle",
+                "Ready when you are",
+                "Hold up an open palm to shuffle your library."
+            )
+        case .libraryLoading:
+            idleMessage(
+                "hourglass",
+                "Loading your library",
+                "One moment."
+            )
+        case .libraryEmpty:
+            idleMessage(
+                "music.note",
+                "No Music Yet",
+                "Add songs to your library in the Apple Music app, then come back."
+            )
+        case .accessDenied:
+            idleMessage(
+                "music.note.slash",
+                "No Music Access",
+                "Allow Gestura to access your music in Settings."
+            )
+        }
+    }
+
+    private func idleMessage(
+        _ symbol: String,
+        _ title: String,
+        _ detail: String
+    ) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: symbol)
+                .font(.system(size: 44))
+                .foregroundStyle(.tint)
+                .symbolRenderingMode(.hierarchical)
+            Text(title)
+                .font(.title3.weight(.semibold))
+            Text(detail)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 32)
+    }
+
     @ViewBuilder
     private var activeRecognizerView: some View {
         VStack(spacing: 24) {
-            artworkView
-            songInfoRow
+            if viewModel.currentTrack == nil {
+                idlePrompt
+            } else {
+                artworkView
+                songInfoRow
+            }
             Spacer()
             gestureFlashZone
                 .animation(
@@ -255,6 +320,7 @@ struct GesturaTabView: View {
     let gestureVM = GestureViewModel(dispatcher: dispatcher, player: player)
     GesturaTabView(
         viewModel: player,
-        gestureViewModel: gestureVM
+        gestureViewModel: gestureVM,
+        musicLibrary: musicLibrary
     )
 }

@@ -184,25 +184,54 @@ class PlayerViewModel: ObservableObject {
         case accessDenied
     }
 
-    /// Starts playback when nothing is loaded, so a gesture can begin a
-    /// session without touching the screen. Prefers the most recent track,
-    /// falling back to a random song on a fresh install.
-    @discardableResult
-    func startPlayback() -> StartPlaybackResult {
-        if let current = currentTrack { return .started(current) }
-        guard !musicLibrary.permissionDenied else { return .accessDenied }
+    /// What `startPlayback()` would do right now, without doing it — so the
+    /// idle recognizer screen can name the track an open palm will start.
+    ///
+    /// The no-history case is deliberately `.shuffleLibrary` rather than a
+    /// named track: the fallback picks at random, so previewing a specific
+    /// title would promise something `startPlayback()` wouldn't deliver.
+    enum PendingStart {
+        case resume(Track)
+        case shuffleLibrary
+        case libraryLoading
+        case libraryEmpty
+        case accessDenied
+    }
+
+    var pendingStart: PendingStart {
+        if musicLibrary.permissionDenied { return .accessDenied }
         guard musicLibrary.hasLoaded else { return .libraryLoading }
 
         if let recent = musicLibrary.recentlyPlayedTracks.first {
-            play(recent, in: musicLibrary.recentlyPlayedTracks)
-            return .started(recent)
+            return .resume(recent)
         }
+        return musicLibrary.songs.isEmpty ? .libraryEmpty : .shuffleLibrary
+    }
 
-        guard let song = musicLibrary.songs.randomElement() else {
+    /// Starts playback when nothing is loaded, so a gesture can begin a
+    /// session without touching the screen. Routed through `pendingStart` so
+    /// what the idle screen promises and what this does can't drift apart.
+    @discardableResult
+    func startPlayback() -> StartPlaybackResult {
+        if let current = currentTrack { return .started(current) }
+
+        switch pendingStart {
+        case .accessDenied:
+            return .accessDenied
+        case .libraryLoading:
+            return .libraryLoading
+        case .libraryEmpty:
             return .libraryEmpty
+        case .resume(let track):
+            play(track, in: musicLibrary.recentlyPlayedTracks)
+            return .started(track)
+        case .shuffleLibrary:
+            guard let song = musicLibrary.songs.randomElement() else {
+                return .libraryEmpty
+            }
+            play(song, in: musicLibrary.songs)
+            return .started(song)
         }
-        play(song, in: musicLibrary.songs)
-        return .started(song)
     }
 
     func nextTrack() {
