@@ -103,13 +103,18 @@ open Gestura/Gestura.xcodeproj
 
 ### Onboarding
 
-| Welcome | Gestures | Privacy | All Set |
-|---|---|---|---|
-| ![Welcome](assets/onboarding-1.png) | ![Gestures](assets/onboarding-2.png) | ![Privacy](assets/onboarding-3.png) | ![All Set](assets/onboarding-4.png) |
+| Welcome | Your Library | Gestures | Privacy | All Set |
+|---|---|---|---|---|
+| ![Welcome](assets/onboarding-1.png) | ![Your Library](assets/onboarding-2.png) | ![Gestures](assets/onboarding-3.png) | ![Privacy](assets/onboarding-4.png) | ![All Set](assets/onboarding-5.png) |
 
 > **Run on a real device.** Gesture control needs the front camera, and playback uses your on-device music library — neither works in the Simulator. Grant camera access when prompted, enable Gestura in Settings, and play a track.
 
 ## Requirements
 
-- iOS 26.4+ · Xcode 26+
+- iOS 26.1+ · Xcode 26+
 - An iPhone with songs in the Music library
+
+Gestura plays your own library — songs added to Apple Music (including
+downloads for offline listening) and audio already synced or purchased on the
+device. It can't see or control Spotify, YouTube Music, or other streaming
+apps, which keep playback inside their own processes.
