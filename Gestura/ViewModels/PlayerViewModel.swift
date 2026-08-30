@@ -159,6 +159,23 @@ class PlayerViewModel: ObservableObject {
 
     // MARK: - PLAYBACK
 
+    /// Screenshot capture only: poses a "now playing" state without touching
+    /// the system player, which has nothing to play in the Simulator.
+    func stageForScreenshots(
+        queue tracks: [Track],
+        playingIndex: Int,
+        at time: TimeInterval
+    ) {
+        guard ScreenshotMode.isActive,
+            tracks.indices.contains(playingIndex)
+        else { return }
+        originalQueue = tracks
+        queue = tracks
+        queueIndex = playingIndex
+        playerState = .playing(tracks[playingIndex])
+        currentTime = time
+    }
+
     func play(_ track: Track, in context: [Track]) {
         originalQueue = context
 

@@ -123,8 +123,7 @@ final class GestureRecognitionService: NSObject {
     // MARK: - LIFECYCLE
 
     func start() async -> StartResult {
-        // Bail before prompting for the camera if the model never loaded —
-        // there's no point gating a feature that can't run.
+        
         guard handPoseClassifier != nil else { return .modelUnavailable }
 
         let authorized = await Self.requestCameraAuthorization()

@@ -74,6 +74,15 @@ final class GestureViewModel: ObservableObject {
 
     func start() async {
         guard !isRunning else { return }
+        if ScreenshotMode.isActive {
+            // Screenshot capture runs in the Simulator, which has no camera:
+            // pose the recognizer as live instead of starting the service.
+            isRunning = true
+            unavailableReason = nil
+            liveStatus = .handDetected
+            lastDetectedGesture = .openPalm
+            return
+        }
         isRunning = true
         unavailableReason = nil
         liveStatus = .idle

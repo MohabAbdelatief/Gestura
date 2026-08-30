@@ -28,3 +28,6 @@ playground.xcworkspace
 
 # Tooling / local config (not for publishing)
 .claude/
+
+# App Store screenshot exports (large, regenerated with -GesturaScreenshots)
+AppStoreScreenshots/

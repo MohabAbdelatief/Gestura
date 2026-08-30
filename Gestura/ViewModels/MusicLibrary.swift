@@ -83,6 +83,11 @@ class MusicLibrary: ObservableObject {
     /// on the moment the user answers instead of sitting on a spinner while a
     /// large library reads.
     func requestAccess() async {
+        if ScreenshotMode.isActive {
+            songs = ScreenshotMode.demoTracks
+            hasLoaded = true
+            return
+        }
         guard await musicService.requestAuthorization() else {
             permissionDenied = true  // ← tell the UI
             return

@@ -121,6 +121,14 @@ struct ContentView: View {
             // Onboarding asks for library access on the screen that explains
             // it, so only load directly for people who are past that flow —
             // otherwise the system prompt lands on the welcome step.
+            if ScreenshotMode.isActive {
+                musicLibrary.loadSongs()
+                ScreenshotMode.stage(
+                    player: viewModel,
+                    libraryStore: .shared
+                )
+                return
+            }
             if hasCompletedOnboarding { musicLibrary.loadSongs() }
             viewModel.observeNowPlaying()
         }
