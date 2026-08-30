@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestura — Support</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1c1c1e;
+    --muted: #6b6b70;
+    --rule: #e3e3e6;
+    --accent: #0a63d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131315;
+      --fg: #ececef;
+      --muted: #9a9aa0;
+      --rule: #2c2c30;
+      --accent: #6ba5ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 3rem 1.25rem 5rem;
+    background: var(--bg);
+    color: var(--fg);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 40rem; margin: 0 auto; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .35rem; }
+  h2 {
+    font-size: 1.2rem;
+    margin: 2.5rem 0 .6rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  h3 { font-size: 1rem; margin: 1.6rem 0 .4rem; }
+  .date { color: var(--muted); margin: 0 0 2rem; font-size: .95rem; }
+  .lede { font-size: 1.1rem; }
+  ul, ol { padding-left: 1.2rem; }
+  li { margin: .4rem 0; }
+  a { color: var(--accent); }
+  .table-wrap { overflow-x: auto; margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .97rem; }
+  th, td {
+    text-align: left;
+    padding: .55rem .75rem .55rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th { color: var(--muted); font-weight: 600; font-size: .85rem;
+       text-transform: uppercase; letter-spacing: .03em; }
+  tr:last-child td { border-bottom: 0; }
+  .gesture { white-space: nowrap; }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: .9rem;
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Support</h1>
+<p class="date">Gestura · Updated 30 August 2026</p>
+
+<p class="lede">
+  Questions, bug reports, and feedback are welcome at
+  <a href="mailto:mohababdelatief@icloud.com">mohababdelatief@icloud.com</a>.
+  Including your iPhone model, your iOS version, and the Gestura version shown
+  in Settings › About makes problems much faster to track down.
+</p>
+
+<h2>Getting started</h2>
+<ol>
+  <li>Open Gestura and allow access to your music library when prompted — the
+      app plays the music already on your iPhone.</li>
+  <li>Play a track from Home, Library, or Search.</li>
+  <li>Open the Gestura tab and allow camera access. Hold a hand pose in front
+      of the front camera and playback responds.</li>
+</ol>
+<p>
+  Gesture control works best with the iPhone propped up, your whole hand inside
+  the frame, and reasonable lighting.
+</p>
+
+<h2>Gestures</h2>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Gesture</th><th>Action</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="gesture">✋ Open Palm</td><td>Play / Pause</td></tr>
+    <tr><td class="gesture">👉 Point Right</td><td>Next Track</td></tr>
+    <tr><td class="gesture">👈 Point Left</td><td>Previous Track</td></tr>
+    <tr><td class="gesture">👍 Thumbs Up</td><td>Add to Favorites</td></tr>
+    <tr><td class="gesture">👎 Thumbs Down</td><td>Remove from Favorites</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  The same list is always available in the app under Settings › Gesture
+  Reference.
+</p>
+
+<h2>Troubleshooting</h2>
+
+<h3>My gestures aren't being recognized</h3>
+<ul>
+  <li>Check that Gesture Control is turned on in Settings.</li>
+  <li>Hold the pose still for a moment. Gestura waits until it is confident
+      before acting, which is what stops ordinary hand movements from skipping
+      your music.</li>
+  <li>Move your hand fully into the frame, and try better lighting — a backlit
+      hand in front of a bright window is hard to read.</li>
+  <li>After a gesture fires there is a short cooldown before the same gesture
+      can fire again.</li>
+  <li>Try a faster preset under Settings › Recognizer Speed. Snappy reacts
+      quickest; Relaxed is the most deliberate.</li>
+</ul>
+
+<h3>Gestures fire when I didn't mean them to</h3>
+<p>
+  Switch Settings › Recognizer Speed to Relaxed. It requires a longer hold and
+  a higher confidence before acting, and waits longer between gestures.
+</p>
+
+<h3>The camera view is blank, or says access is needed</h3>
+<p>
+  Open the iOS Settings app, find Gestura, and turn Camera on. The camera runs
+  only while the Gestura tab is open and gesture control is enabled — it stops
+  as soon as you leave the tab or send the app to the background, so a blank
+  view elsewhere in the app is expected.
+</p>
+
+<h3>My library is empty</h3>
+<p>
+  Gestura needs media library access: open the iOS Settings app, find Gestura,
+  and allow access to Apple Music and your media library. The app can only show
+  music that is on the device, so streaming tracks need to be downloaded for
+  offline listening before they appear.
+</p>
+
+<h3>Can Gestura control Spotify, YouTube Music, or other apps?</h3>
+<p>
+  No. Gestura plays your device's own music library. Other streaming apps keep
+  playback inside their own apps, where no third-party player can reach it.
+</p>
+
+<h3>I'd rather not use the camera at all</h3>
+<p>
+  Turn Gesture Control off in Settings, or decline camera access. Gestura then
+  works as an ordinary music player, and the camera never runs.
+</p>
+
+<h3>Turning off the chime or haptics</h3>
+<p>
+  Detection Chime and Haptic Feedback each have their own switch in Settings,
+  under Gestura.
+</p>
+
+<h3>Clearing favorites or recently played</h3>
+<p>
+  Settings › Library has Clear Favorites and Clear Recently Played. Both are
+  permanent and cannot be undone.
+</p>
+
+<h2>Privacy</h2>
+<p>
+  Gestura collects nothing, has no accounts or analytics, and makes no network
+  requests. Camera frames are analyzed on your iPhone and immediately
+  discarded — nothing is recorded or uploaded. The full policy is at
+  <a href="privacy.html">Gestura's privacy policy</a>.
+</p>
+
+<h2>Requirements</h2>
+<ul>
+  <li>iPhone running iOS 26.1 or later</li>
+  <li>Music in your device's library for playback</li>
+  <li>Front camera access for gesture control (optional)</li>
+</ul>
+
+<h2>Contact</h2>
+<p>
+  Email <a href="mailto:mohababdelatief@icloud.com">mohababdelatief@icloud.com</a>
+  with anything that isn't answered above — including feature requests and
+  gestures you wish the app supported.
+</p>
+
+<footer>
+  Gestura is an independent app. Apple, Apple Music, and iPhone are trademarks
+  of Apple Inc.
+</footer>
+
+</main>
+</body>
+</html>
