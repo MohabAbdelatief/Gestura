@@ -118,3 +118,9 @@ Gestura plays your own library — songs added to Apple Music (including
 downloads for offline listening) and audio already synced or purchased on the
 device. It can't see or control Spotify, YouTube Music, or other streaming
 apps, which keep playback inside their own processes.
+
+## Support
+
+- **[Support page](https://mohababdelatief.github.io/Gestura/support.html)** — setup, the gesture reference, and troubleshooting for missed or unwanted gestures.
+- **[Privacy policy](https://mohababdelatief.github.io/Gestura/privacy.html)** — what the camera does and doesn't do.
+- Bugs and feature requests: [open an issue](https://github.com/MohabAbdelatief/Gestura/issues) or email <mohababdelatief@icloud.com>.
