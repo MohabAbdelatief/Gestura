@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/app-icon.png" alt="Gestura app icon" width="128">
+</p>
+
 # Gestura ✋🎵
 
 > A hands-free iOS music player — control playback with **hand gestures**, recognized in real time by an **on-device CoreML model**. No touch, no voice.
