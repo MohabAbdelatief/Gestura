@@ -97,19 +97,19 @@ open Gestura/Gestura.xcodeproj
 
 ### The App
 
-| Home | Mini-Player | Now Playing | Queue |
+| Home | Gesture Control | Now Playing | Library |
 |---|---|---|---|
-| ![Home](assets/home.png) | ![Mini-Player](assets/home-miniplayer.png) | ![Now Playing](assets/now-playing.png) | ![Queue](assets/queue.png) |
+| ![Home](assets/home.png) | ![Gesture Control](assets/gesture-control.png) | ![Now Playing](assets/now-playing.png) | ![Library](assets/library.png) |
 
-| Library | Search | Settings | Gesture Recognizer |
+| Songs | Album | Search | Settings |
 |---|---|---|---|
-| ![Library](assets/library.png) | ![Search](assets/search.png) | ![Settings](assets/settings.png) | ![Recognizer](assets/gestura.png) |
+| ![Songs](assets/songs.png) | ![Album](assets/album.png) | ![Search](assets/search.png) | ![Settings](assets/settings.png) |
 
 ### Onboarding
 
-| Welcome | Your Library | Gestures | Privacy | All Set |
-|---|---|---|---|---|
-| ![Welcome](assets/onboarding-1.png) | ![Your Library](assets/onboarding-2.png) | ![Gestures](assets/onboarding-3.png) | ![Privacy](assets/onboarding-4.png) | ![All Set](assets/onboarding-5.png) |
+| Welcome | Five Simple Gestures |
+|---|---|
+| <img src="assets/onboarding-welcome.png" width="200"> | <img src="assets/onboarding-gestures.png" width="200"> |
 
 > **Run on a real device.** Gesture control needs the front camera, and playback uses your on-device music library — neither works in the Simulator. Grant camera access when prompted, enable Gestura in Settings, and play a track.
 
