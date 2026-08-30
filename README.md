@@ -1,16 +1,25 @@
-<p align="center">
-  <img src="assets/app-icon.png" alt="Gestura app icon" width="128">
-</p>
+<div align="center">
 
-# Gestura ✋🎵
+<img src="assets/app-icon.png" alt="Gestura app icon" width="112">
 
-> A hands-free iOS music player — control playback with **hand gestures**, recognized in real time by an **on-device CoreML model**. No touch, no voice.
+# Gestura
 
-![Swift](https://img.shields.io/badge/Swift-orange) ![SwiftUI](https://img.shields.io/badge/SwiftUI-blue) ![CoreML](https://img.shields.io/badge/CoreML-lightblue) ![Vision](https://img.shields.io/badge/Vision-purple) ![Platform](https://img.shields.io/badge/iOS-lightgrey)
+**A hands-free iOS music player.** Control playback with hand gestures, recognized in
+real time by an on-device CoreML model — no touch, no voice.
 
+<img src="https://img.shields.io/badge/Swift-orange" alt="Swift">
+<img src="https://img.shields.io/badge/SwiftUI-blue" alt="SwiftUI">
+<img src="https://img.shields.io/badge/CoreML-lightblue" alt="CoreML">
+<img src="https://img.shields.io/badge/Vision-purple" alt="Vision">
+<img src="https://img.shields.io/badge/iOS-lightgrey" alt="Platform">
+
+</div>
+
+<!-- Demo GIF: add the recording at assets/demo.gif, then uncomment.
 ## Demo
 ![Gesture control demo](assets/demo.gif)
 > A short screen recording of controlling playback with hand gestures.
+-->
 
 ## What is Gestura?
 
@@ -107,9 +116,9 @@ open Gestura/Gestura.xcodeproj
 
 ### Onboarding
 
-| Welcome | Five Simple Gestures |
-|---|---|
-| <img src="assets/onboarding-welcome.png" width="200"> | <img src="assets/onboarding-gestures.png" width="200"> |
+| Welcome | Your Library | Five Simple Gestures |
+|---|---|---|
+| <img src="assets/onboarding-welcome.png" width="200"> | <img src="assets/onboarding-library.png" width="200"> | <img src="assets/onboarding-gestures.png" width="200"> |
 
 > **Run on a real device.** Gesture control needs the front camera, and playback uses your on-device music library — neither works in the Simulator. Grant camera access when prompted, enable Gestura in Settings, and play a track.
 
