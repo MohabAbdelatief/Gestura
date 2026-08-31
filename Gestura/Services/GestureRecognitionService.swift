@@ -8,6 +8,7 @@
 import AVFoundation
 import CoreML
 import Foundation
+import ImageIO
 import QuartzCore
 import Vision
 
@@ -54,6 +55,37 @@ final class GestureRecognitionService: NSObject {
     // Software frame throttling. Processed only on processingQueue.
     private var lastProcessedTime: CFTimeInterval = 0
     private let frameProcessingInterval: CFTimeInterval = 1.0 / 12.0  // ~12 fps
+
+    // The orientation that turns the raw front-camera buffer upright for
+    // Vision. This is not cosmetic: the classifier consumes normalized
+    // keypoint coordinates *in this frame*, so it has to match the orientation
+    // of the footage the model was trained on.
+    //
+    // It was `.right` — the back-camera portrait convention — which rotated
+    // every frame a quarter turn. The gestures defined by a direction
+    // (point_left / point_right) came out looking like the gestures defined by
+    // a thumb and were classified as thumbs_up / thumbs_down, while the
+    // rotation-agnostic open_palm kept working. `.leftMirrored` was confirmed
+    // on device with the orientation sweep at the bottom of this file: it is
+    // the only candidate that names all five gestures correctly.
+    //
+    // This value is paired with the mirroring decision in
+    // `configureSessionSync` — the two describe one transform between sensor
+    // and model, so neither can be changed alone. Re-run the sweep if either
+    // moves, or if the model is retrained on differently captured footage.
+    private static let inferenceOrientation: CGImagePropertyOrientation =
+        .leftMirrored
+
+    #if DEBUG
+    /// Logs what every candidate orientation makes of the current frame.
+    /// Flip to `true` to re-run the sweep — after retraining the model, or if
+    /// direction-dependent gestures start misfiring again.
+    static var orientationDiagnosticEnabled = false
+    // A sweep is eight Vision requests plus eight classifications, so it runs
+    // far slower than the recognizer itself.
+    private let sweepInterval: CFTimeInterval = 0.5
+    private var lastSweepTime: CFTimeInterval = 0
+    #endif
 
     private let handPoseRequest: VNDetectHumanHandPoseRequest = {
         let request = VNDetectHumanHandPoseRequest()
@@ -225,14 +257,16 @@ final class GestureRecognitionService: NSObject {
         captureSession.addOutput(output)
         videoDataOutput = output
 
-        // The Hand Pose Classifier was trained on un-mirrored selfie
-        // footage (iPhone Camera app default: Settings → Camera →
-        // "Mirror Front Camera" = OFF). By default, AVCaptureConnection
-        // auto-mirrors the front-camera buffer for selfie-style preview,
-        // which would horizontally flip the image and cause point_left /
-        // point_right to be detected as their opposite — plus cratered
-        // confidence on the other classes. We explicitly disable
-        // mirroring so the inference buffer matches the training frames.
+        // Mirroring is turned off here so the delegate receives the raw
+        // sensor buffer, and the whole sensor-to-model transform is then
+        // expressed in one place: `inferenceOrientation`, which Vision
+        // applies. Splitting the transform across both would make each half
+        // unreadable on its own.
+        //
+        // Note that `inferenceOrientation` is `.leftMirrored` — the flip the
+        // model wants is real, it is just applied by Vision rather than by
+        // the capture connection. Enabling mirroring here without changing
+        // that constant would apply the flip twice.
         if let connection = output.connection(with: .video),
            connection.isVideoMirroringSupported
         {
@@ -258,9 +292,15 @@ extension GestureRecognitionService:
 
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
         else { return }
+        #if DEBUG
+        if Self.orientationDiagnosticEnabled {
+            runOrientationSweep(on: pixelBuffer, at: now)
+        }
+        #endif
+
         let handler = VNImageRequestHandler(
             cvPixelBuffer: pixelBuffer,
-            orientation: .right,
+            orientation: Self.inferenceOrientation,
             options: [:]
         )
         do {
@@ -304,3 +344,92 @@ extension GestureRecognitionService:
     }
 
 }
+
+// MARK: - ORIENTATION SWEEP (DEBUG ONLY)
+
+#if DEBUG
+extension GestureRecognitionService {
+    /// Every orientation the raw buffer could plausibly need. The mirrored
+    /// variants are in here on purpose: a front-camera buffer can differ from
+    /// the trained-on footage by a flip as well as a rotation, and
+    /// `configureSessionSync` deliberately turns the connection's own
+    /// mirroring off.
+    fileprivate static let candidateOrientations:
+        [(name: String, value: CGImagePropertyOrientation)] = [
+            ("up", .up),
+            ("down", .down),
+            ("left", .left),
+            ("right", .right),
+            ("upMirrored", .upMirrored),
+            ("downMirrored", .downMirrored),
+            ("leftMirrored", .leftMirrored),
+            ("rightMirrored", .rightMirrored),
+        ]
+
+    /// Classifies one frame under every candidate orientation and logs what
+    /// each one makes of it.
+    ///
+    /// Hold a single gesture steady — `point_right` is the one to use, since
+    /// it is the gesture a wrong orientation destroys — and read the console.
+    /// The correct orientation is the row that names the gesture you are
+    /// actually holding, with a confidence well clear of the others. Put that
+    /// value in `inferenceOrientation` and set
+    /// `orientationDiagnosticEnabled` back to `false`.
+    func runOrientationSweep(
+        on pixelBuffer: CVPixelBuffer,
+        at now: CFTimeInterval
+    ) {
+        guard now - lastSweepTime > sweepInterval else { return }
+        lastSweepTime = now
+        guard let handPoseClassifier else { return }
+
+        var rows: [String] = []
+        for candidate in Self.candidateOrientations {
+            let name = candidate.name.padding(
+                toLength: 14,
+                withPad: " ",
+                startingAt: 0
+            )
+            // A fresh request per candidate: VNRequest holds its results, so
+            // reusing the recognizer's would race with the live path.
+            let request = VNDetectHumanHandPoseRequest()
+            request.maximumHandCount = 1
+            let handler = VNImageRequestHandler(
+                cvPixelBuffer: pixelBuffer,
+                orientation: candidate.value,
+                options: [:]
+            )
+            do {
+                try handler.perform([request])
+                guard
+                    let observation = request.results?.first,
+                    let keypoints = try? observation.keypointsMultiArray()
+                else {
+                    rows.append("  \(name) no hand found")
+                    continue
+                }
+                let prediction = try handPoseClassifier.prediction(
+                    poses: keypoints
+                )
+                rows.append(
+                    "  \(name) \(Self.topLabels(prediction.labelProbabilities))"
+                )
+            } catch {
+                rows.append("  \(name) failed: \(error.localizedDescription)")
+            }
+        }
+        log("🧭 orientation sweep\n" + rows.joined(separator: "\n"))
+    }
+
+    /// The three likeliest labels, highest first, as `label 0.93` pairs.
+    fileprivate static func topLabels(
+        _ probabilities: [String: Double]
+    ) -> String {
+        probabilities
+            .sorted { $0.value > $1.value }
+            .prefix(3)
+            .map { "\($0.key) \(String(format: "%.2f", $0.value))" }
+            .joined(separator: "   ")
+    }
+}
+#endif
