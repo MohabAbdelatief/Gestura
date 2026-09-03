@@ -7,6 +7,10 @@
 **A hands-free iOS music player.** Control playback with hand gestures, recognized in
 real time by an on-device CoreML model — no touch, no voice.
 
+<a href="https://apps.apple.com/app/gestura-gesture-music-player/id6806563234">
+  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="48">
+</a>
+
 <img src="https://img.shields.io/badge/Swift-orange" alt="Swift">
 <img src="https://img.shields.io/badge/SwiftUI-blue" alt="SwiftUI">
 <img src="https://img.shields.io/badge/CoreML-lightblue" alt="CoreML">
