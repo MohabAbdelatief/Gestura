@@ -21,21 +21,13 @@ real time by an on-device CoreML model — no touch, no voice.
 
 ## Screenshots
 
-### The App
-
-| Home | Gesture Control | Now Playing | Library |
+| Gesture Control | Gesture Reference | Now Playing | Home |
 |---|---|---|---|
-| ![Home](assets/home.png) | ![Gesture Control](assets/gesture-control.png) | ![Now Playing](assets/now-playing.png) | ![Library](assets/library.png) |
+| ![Gesture control](assets/gesture-control.png) | ![Gesture reference](assets/onboarding-gestures.png) | ![Now Playing](assets/now-playing.png) | ![Home](assets/home.png) |
 
-| Songs | Album | Search | Settings |
+| Library | Search | Settings | On-Device & Private |
 |---|---|---|---|
-| ![Songs](assets/songs.png) | ![Album](assets/album.png) | ![Search](assets/search.png) | ![Settings](assets/settings.png) |
-
-### Onboarding
-
-| Welcome | Your Library | Five Simple Gestures |
-|---|---|---|
-| <img src="assets/onboarding-welcome.png" width="200"> | <img src="assets/onboarding-library.png" width="200"> | <img src="assets/onboarding-gestures.png" width="200"> |
+| ![Library](assets/library.png) | ![Search](assets/search.png) | ![Settings](assets/settings.png) | ![Onboarding](assets/onboarding-welcome.png) |
 
 > **Run on a real device.** Gesture control needs the front camera, and playback uses your on-device music library — neither works in the Simulator. Grant camera access when prompted, enable Gestura in Settings, and play a track.
 
