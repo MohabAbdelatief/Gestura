@@ -1,0 +1,27 @@
+A new build of version 1.0 has been uploaded for this submission.
+
+1. Screen recording
+Attached: a recording made on a physical iPhone running the latest iOS, starting at app launch and covering first run and all core features, including both system permission prompts. Gestura has no registration, login, or account deletion; no purchases or subscriptions; and no user-generated content.
+
+2. Devices and OS tested
+- iPhone 12 Pro Max, iOS 26.1
+- iPhone 17 Pro Max, iOS 27.0 beta
+iPhone-only, portrait, minimum iOS 26.1. Gesture recognition needs a physical device with a front camera and cannot run in the Simulator.
+
+3. Functions and audience
+Gestura is a music player for the songs already on the user's iPhone, with hands-free control: holding one of five hand poses in front of the front camera plays, pauses, skips, or favorites the current track - no touch, no voice. It is for moments when reaching for the phone isn't practical (cooking, workouts, driving), and unlike voice control it works silently and in loud rooms. It is also a full local-library player: browsing, search, playlists, favorites, queue, lyrics, and a now-playing screen. General audience, rated 4+.
+
+4. Setup and access
+No account or login exists, so there are no demo credentials.
+Please add music to the test device before reviewing. Gestura plays songs in the device's own library (MPMediaLibrary); it is a player, not a streaming service, and ships with no bundled audio. On an empty library it correctly shows a "No Music Yet" empty state. Please first add a few songs - for example, download tracks for offline playback in Apple Music, or sync audio files from a Mac.
+Onboarding is five screens: Welcome; Library (requests music access - please Allow); Gestures; Camera (requests camera access - please Allow); Done.
+In the app: Home, Library, and Search browse the library; tap any song to play. The Gestura tab is gesture control - enable recognition, then hold a pose 30-60 cm from the front camera in reasonable light until the on-screen indicator confirms it. Open palm = play/pause, point right = next track, point left = previous track, thumbs up = add to favorites, thumbs down = remove. A pose must be held briefly (0.45 s by default) before it fires, to prevent accidental triggers. Settings offers three sensitivity presets and a privacy screen.
+
+5. External services, tools, and platforms
+None. Everything runs on-device and the app makes no network requests at all - it contains no networking code (no URLSession, no web views) and works fully in airplane mode. There are no data providers or backend, no authentication services, no payment processors or in-app purchases, no third-party SDKs or package dependencies, and no analytics, advertising, tracking, or crash-reporting SDKs. No external or cloud AI services are used: hand-pose recognition runs on a CoreML model I trained myself in Create ML and bundled in the app, executing on-device through Vision and CoreML. Apple frameworks only: SwiftUI, MediaPlayer, AVFoundation, Vision, CoreML. Camera frames are processed in memory and are never recorded, stored, or transmitted.
+
+6. Regional differences
+None. The app behaves identically in every region and storefront. It has no region-locked features, no location services, and no server-side configuration - being fully offline, its behavior cannot vary by region. It presents only the music already on the user's device.
+
+7. Regulated industries and third-party material
+Not applicable. Gestura is not in a regulated industry and does not provide, distribute, or stream any third-party copyrighted material. It plays only the audio already present in the user's own library, through Apple's MPMusicPlayerController API, and offers no way to acquire, share, or export music. All other assets - the icon, the artwork, and the hand-pose CoreML model, trained on my own labeled data - are my own original work.
