@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+internal import MusicKit
 
 struct SearchTabView: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -19,12 +20,14 @@ struct SearchTabView: View {
 
     // MARK: - COMPUTED PROPERTIES
 
-    var filteredSongs: [Track] {
+    var filteredSongs: [Song] {
         guard !searchText.isEmpty else { return [] }
         return musicLibrary.songs.filter {
             $0.title.localizedCaseInsensitiveContains(searchText)
-                || $0.artist.localizedCaseInsensitiveContains(searchText)
-                || $0.albumTitle.localizedCaseInsensitiveContains(searchText)
+                || $0.artistName.localizedCaseInsensitiveContains(searchText)
+                || ($0.albumTitle ?? "").localizedCaseInsensitiveContains(
+                    searchText
+                )
         }
     }
 
@@ -39,7 +42,7 @@ struct SearchTabView: View {
         guard !searchText.isEmpty else { return [] }
         return musicLibrary.albums.filter {
             $0.title.localizedCaseInsensitiveContains(searchText)
-                || $0.artist.localizedCaseInsensitiveContains(searchText)
+                || $0.artistName.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -73,7 +76,7 @@ struct SearchTabView: View {
                                         )
                                     } label: {
                                         SongRowView(
-                                            track: song,
+                                            song: song,
                                             viewModel: viewModel
                                         )
                                     }
@@ -87,7 +90,8 @@ struct SearchTabView: View {
                                     NavigationLink(
                                         destination: ArtistDetailView(
                                             artist: artist,
-                                            viewModel: viewModel
+                                            viewModel: viewModel,
+                                            musicLibrary: musicLibrary
                                         )
                                     ) { ArtistRowView(artist: artist) }
                                 }
@@ -99,6 +103,7 @@ struct SearchTabView: View {
                                     NavigationLink(
                                         destination: AlbumDetailView(
                                             viewModel: viewModel,
+                                            musicLibrary: musicLibrary,
                                             album: album
 
                                         )

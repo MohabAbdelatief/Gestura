@@ -7,22 +7,23 @@
 
 import Foundation
 import SwiftUI
+internal import MusicKit
 
 struct PlayShuffleToolbarButtons: ToolbarContent {
     // MARK: - PROPERTIES
 
-    let tracks: [Track]
+    let songs: [Song]
     let viewModel: PlayerViewModel
 
     // MARK: - VIEW
 
     var body: some ToolbarContent {
-        if !tracks.isEmpty {
+        if !songs.isEmpty {
             ToolbarItemGroup(placement: .topBarLeading) {
                 Button {
                     viewModel.setShuffleEnabled(false)
-                    if let firstTrack = tracks.first {
-                        viewModel.play(firstTrack, in: tracks)
+                    if let firstSong = songs.first {
+                        viewModel.play(firstSong, in: songs)
                     }
                 } label: {
                     Label("Play All", systemImage: "play.fill")
@@ -30,8 +31,8 @@ struct PlayShuffleToolbarButtons: ToolbarContent {
 
                 Button {
                     viewModel.setShuffleEnabled(true)
-                    if let randomTrack = tracks.randomElement() {
-                        viewModel.play(randomTrack, in: tracks)
+                    if let randomSong = songs.randomElement() {
+                        viewModel.play(randomSong, in: songs)
                     }
                 } label: {
                     Label("Shuffle", systemImage: "shuffle")

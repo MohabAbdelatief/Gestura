@@ -10,6 +10,7 @@ import Combine
 import Foundation
 import QuartzCore
 import SwiftUI
+internal import MusicKit
 
 @MainActor
 final class GestureViewModel: ObservableObject {
@@ -74,15 +75,6 @@ final class GestureViewModel: ObservableObject {
 
     func start() async {
         guard !isRunning else { return }
-        if ScreenshotMode.isActive {
-            // Screenshot capture runs in the Simulator, which has no camera:
-            // pose the recognizer as live instead of starting the service.
-            isRunning = true
-            unavailableReason = nil
-            liveStatus = .handDetected
-            lastDetectedGesture = .openPalm
-            return
-        }
         isRunning = true
         unavailableReason = nil
         liveStatus = .idle
@@ -223,11 +215,11 @@ final class GestureViewModel: ObservableObject {
         case .pointLeft:
             return .previousTrack
         case .thumbsUp:
-            guard let trackID = player.currentTrack?.id else { return nil }
-            return .setFavorite(id: trackID, isFavorited: true)
+            guard let songID = player.currentSong?.id else { return nil }
+            return .setFavorite(id: songID, isFavorited: true)
         case .thumbsDown:
-            guard let trackID = player.currentTrack?.id else { return nil }
-            return .setFavorite(id: trackID, isFavorited: false)
+            guard let songID = player.currentSong?.id else { return nil }
+            return .setFavorite(id: songID, isFavorited: false)
         }
     }
 }

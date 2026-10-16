@@ -3,7 +3,7 @@
 //  Gestura
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct MiniPlayerView: View {
@@ -18,20 +18,14 @@ struct MiniPlayerView: View {
     // MARK: - VIEW
 
     var body: some View {
-        if let track = viewModel.currentTrack {
+        if let song = viewModel.currentSong {
             HStack {
                 Button {
                     onTap()
                 } label: {
                     HStack {
-                        if let artwork = track.artwork,
-                            let image = artwork.image(
-                                at: CGSize(width: 44, height: 44)
-                            )
-                        {
-                            Image(uiImage: image)
-                                .resizable()
-                                .frame(width: 30, height: 30)
+                        if let artwork = song.artwork {
+                            ArtworkImage(artwork, width: 30, height: 30)
                                 .cornerRadius(6)
                         } else {
                             RoundedRectangle(cornerRadius: 6)
@@ -45,10 +39,10 @@ struct MiniPlayerView: View {
                         }
 
                         VStack(alignment: .leading) {
-                            Text(track.title)
+                            Text(song.title)
                                 .font(.subheadline)
                                 .lineLimit(1)
-                            Text(track.artist)
+                            Text(song.artistName)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)

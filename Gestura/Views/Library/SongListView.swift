@@ -5,7 +5,7 @@
 //  Created by Mohab Abdelatief on 20/04/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct SongListView: View {
@@ -18,18 +18,22 @@ struct SongListView: View {
 
     // MARK: - COMPUTED PROPERTIES
 
-    var sortedSongs: [Track] {
+    var sortedSongs: [Song] {
         switch songSortingOption {
         case .title:
             return musicLibrary.songs.sorted { $0.title < $1.title }
         case .artist:
-            return musicLibrary.songs.sorted { $0.artist < $1.artist }
+            return musicLibrary.songs.sorted { $0.artistName < $1.artistName }
         case .album:
-            return musicLibrary.songs.sorted { $0.albumTitle < $1.albumTitle }
+            return musicLibrary.songs.sorted {
+                ($0.albumTitle ?? "") < ($1.albumTitle ?? "")
+            }
         case .dateAdded:
-            return musicLibrary.songs.sorted { $1.dateAdded < $0.dateAdded }
+            return musicLibrary.songs.sorted {
+                ($1.libraryAddedDate ?? .distantPast)
+                    < ($0.libraryAddedDate ?? .distantPast)
+            }
         }
-
     }
 
     // MARK: - VIEW
@@ -40,7 +44,7 @@ struct SongListView: View {
                 Button {
                     viewModel.play(song, in: sortedSongs)
                 } label: {
-                    SongRowView(track: song, viewModel: viewModel)
+                    SongRowView(song: song, viewModel: viewModel)
                 }
                 .buttonStyle(.plain)
 
@@ -49,7 +53,7 @@ struct SongListView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Songs")
         .toolbar {
-            PlayShuffleToolbarButtons(tracks: sortedSongs, viewModel: viewModel)
+            PlayShuffleToolbarButtons(songs: sortedSongs, viewModel: viewModel)
             SortOptionMenu(selection: $songSortingOption)
         }
 

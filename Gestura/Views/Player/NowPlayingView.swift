@@ -3,7 +3,7 @@
 //  Gestura
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct NowPlayingView: View {
@@ -16,7 +16,6 @@ struct NowPlayingView: View {
     // MARK: - STATE
 
     @State private var showQueue = false
-    @State private var showLyrics = false
 
     // MARK: - ENVIROMENT
     @EnvironmentObject private var dispatcher: PlaybackIntentDispatcher
@@ -30,23 +29,12 @@ struct NowPlayingView: View {
         )
     }
 
-    // MARK: - COMPUTED PROPERTIES
-
-    /// Whether the current track carries lyrics worth opening.
-    ///
-    /// `MPMediaItem.lyrics` only returns lyrics embedded in the file's own
-    /// metadata — Apple Music catalog songs don't vend them through
-    /// MediaPlayer at all — so for most libraries this is false.
-    private var hasLyrics: Bool {
-        !(viewModel.currentTrack?.lyrics ?? "").isEmpty
-    }
-
     // MARK: - VIEW
 
     var body: some View {
         VStack(spacing: 24) {
             artworkView
-            trackInfoView
+            songInfoView
             progressView
             controlsView
             volumeSliderView
@@ -55,9 +43,6 @@ struct NowPlayingView: View {
         .padding()
         .sheet(isPresented: $showQueue) {
             QueueView(viewModel: viewModel)
-        }
-        .sheet(isPresented: $showLyrics) {
-            LyricsView(viewModel: viewModel)
         }
         .overlay(alignment: .bottom) {
             FeedbackHUD()
@@ -68,11 +53,20 @@ struct NowPlayingView: View {
     // MARK: - HELPER VIEWS
 
     private var artworkView: some View {
-        ArtworkView(
-            artwork: viewModel.currentTrack?.artwork,
-            persistentID: viewModel.currentTrack?.id ?? 0,
-            size: 600
-        )
+        Group {
+            if let artwork = viewModel.currentSong?.artwork {
+                GeometryReader { proxy in
+                    ArtworkImage(artwork, width: proxy.size.width)
+                }
+            } else {
+                ZStack {
+                    Rectangle().fill(Color(.systemGray5))
+                    Image(systemName: "music.note")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
         .aspectRatio(1, contentMode: .fit)
         .frame(maxWidth: .infinity)
         .cornerRadius(16)
@@ -80,33 +74,22 @@ struct NowPlayingView: View {
         .padding(.horizontal)
     }
 
-    private var trackInfoView: some View {
+    private var songInfoView: some View {
         HStack {
-            // Held in the layout even with nothing to show, so the title
-            // stays centred against the favourite button; hidden rather than
-            // removed so there's no dead end to tap.
-            Button {
-                showLyrics = true
-            } label: {
-                Image(systemName: "quote.bubble")
-                    .font(.title2)
-                    .foregroundStyle(.primary)
-                    .padding(12)
-                    .glassEffect(.regular, in: Circle())
-            }
-            .accessibilityLabel("Lyrics")
-            .opacity(hasLyrics ? 1 : 0)
-            .disabled(!hasLyrics)
-            .accessibilityHidden(!hasLyrics)
+            // Same size as the favorite button, so the title stays centred.
+            Image(systemName: "star")
+                .font(.title2)
+                .padding(12)
+                .hidden()
 
             Spacer()
             VStack() {
-                Text(viewModel.currentTrack?.title ?? "Not Playing")
+                Text(viewModel.currentSong?.title ?? "Not Playing")
                     .font(.title2)
                     .fontWeight(.bold)
                     .lineLimit(1)
                     .foregroundStyle(.primary)
-                Text(viewModel.currentTrack?.artist ?? "")
+                Text(viewModel.currentSong?.artistName ?? "")
                     .font(.body)
                     .lineLimit(1)
                     .foregroundStyle(.secondary)
@@ -114,17 +97,17 @@ struct NowPlayingView: View {
 
             Spacer()
             Button {
-                guard let trackID = viewModel.currentTrack?.id else { return }
-                let isCurrentlyFavorited = libraryStore.isFavorite(id: trackID)
+                guard let songID = viewModel.currentSong?.id else { return }
+                let isCurrentlyFavorited = libraryStore.isFavorite(id: songID)
                 dispatcher.execute(
                     .setFavorite(
-                        id: trackID,
+                        id: songID,
                         isFavorited: !isCurrentlyFavorited
                     )
                 )
             } label: {
                 let isFavorited =
-                    viewModel.currentTrack
+                    viewModel.currentSong
                     .map { libraryStore.isFavorite(id: $0.id) } ?? false
                 Image(systemName: isFavorited ? "star.fill" : "star")
                     .font(.title2)
@@ -133,7 +116,7 @@ struct NowPlayingView: View {
                     .glassEffect(.regular, in: Circle())
             }
             .accessibilityLabel(
-                (viewModel.currentTrack
+                (viewModel.currentSong
                     .map { libraryStore.isFavorite(id: $0.id) } ?? false)
                     ? "Remove from favorites" : "Add to favorites"
             )
@@ -158,7 +141,7 @@ struct NowPlayingView: View {
                         viewModel.scrub(to: newValue)
                     }
                 ),
-                in: 0...(viewModel.currentTrack?.duration ?? 1),
+                in: 0...(viewModel.currentSong?.duration ?? 1),
                 onEditingChanged: { editing in
                     if !editing {
                         viewModel.endScrubbing()
@@ -180,7 +163,7 @@ struct NowPlayingView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 Spacer()
-                Text(formatTime(viewModel.currentTrack?.duration ?? 0))
+                Text(formatTime(viewModel.currentSong?.duration ?? 0))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

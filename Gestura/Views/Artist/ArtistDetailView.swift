@@ -5,7 +5,7 @@
 //  Created by Mohab Abdelatief on 06/05/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct ArtistDetailView: View {
@@ -13,9 +13,14 @@ struct ArtistDetailView: View {
 
     let artist: Artist
 
+    private var songs: [Song] {
+        musicLibrary.songs(by: artist)
+    }
+
     // MARK: - PROPERTY WRAPPED OBJECTS
 
     @ObservedObject var viewModel: PlayerViewModel
+    @ObservedObject var musicLibrary: MusicLibrary
 
     // MARK: - VIEW
 
@@ -23,11 +28,11 @@ struct ArtistDetailView: View {
         VStack {
             List {
                 artworkHeader
-                ForEach(artist.tracks) { song in
+                ForEach(songs) { song in
                     Button {
-                        viewModel.play(song, in: artist.tracks)
+                        viewModel.play(song, in: songs)
                     } label: {
-                        SongRowView(track: song, viewModel: viewModel)
+                        SongRowView(song: song, viewModel: viewModel)
                     }
                     .buttonStyle(.plain)
                 }
@@ -36,7 +41,7 @@ struct ArtistDetailView: View {
         }
         .navigationTitle(artist.name)
         .toolbar {
-            PlayShuffleToolbarButtons(tracks: artist.tracks, viewModel: viewModel)
+            PlayShuffleToolbarButtons(songs: songs, viewModel: viewModel)
         }
     }
 
@@ -44,15 +49,12 @@ struct ArtistDetailView: View {
 
     private var artworkHeader: some View {
         Group {
-            if let image = artist.artwork?.image(
-                at: CGSize(width: 400, height: 400)
-            ) {
-                Image(uiImage: image)
-                    .resizable()
-                    .cornerRadius(16)
-                    .aspectRatio(1, contentMode: .fill)
-                    .frame(maxWidth: .infinity)
-
+            if let artwork = artist.artwork {
+                GeometryReader { proxy in
+                    ArtworkImage(artwork, width: proxy.size.width)
+                        .cornerRadius(16)
+                }
+                .aspectRatio(1, contentMode: .fit)
             } else {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.gray.opacity(0.3))

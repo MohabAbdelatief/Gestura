@@ -5,7 +5,7 @@
 //  Created by Mohab Abdelatief on 06/05/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct ArtistRowView: View {
@@ -27,12 +27,8 @@ struct ArtistRowView: View {
 
     private var artworkThumbnail: some View {
         Group {
-            if let image = artist.artwork?.image(
-                at: CGSize(width: 44, height: 44)
-            ) {
-                Image(uiImage: image)
-                    .resizable()
-                    .frame(width: 44, height: 44)
+            if let artwork = artist.artwork {
+                ArtworkImage(artwork, width: 44, height: 44)
                     .cornerRadius(6)
             } else {
                 RoundedRectangle(cornerRadius: 6)

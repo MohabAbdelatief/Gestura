@@ -7,6 +7,7 @@
 
 import Combine
 import Foundation
+internal import MusicKit
 
 @MainActor
 class MusicLibrary: ObservableObject {
@@ -21,97 +22,81 @@ class MusicLibrary: ObservableObject {
     // True once an authorized fetch has completed, so the UI can tell
     // "still loading" from "loaded but empty".
     @Published private(set) var hasLoaded: Bool = false
-    @Published private(set) var songs: [Track] = [] {
+    @Published private(set) var songs: [Song] = [] {
         didSet {
-            tracksByID = Dictionary(
+            songsByID = Dictionary(
                 songs.map { ($0.id, $0) },
                 uniquingKeysWith: { first, _ in first }
             )
         }
     }
 
-    private(set) var tracksByID: [UInt64: Track] = [:]
+    @Published private(set) var artists: [Artist] = []
+    @Published private(set) var albums: [Album] = []
+    @Published private(set) var genres: [Genre] = []
+
+    private(set) var songsByID: [MusicItemID: Song] = [:]
 
     // MARK: - COMPUTED PROPERTIES
 
-    var recentlyPlayedTracks: [Track] {
+    var recentlyPlayedSongs: [Song] {
         libraryStore.recentlyPlayedIDs.compactMap { id in
-            tracksByID[id]
+            songsByID[id]
         }
     }
 
-    var favoriteTracks: [Track] {
+    var favoriteSongs: [Song] {
         libraryStore.favoriteIDs.compactMap { id in
-            tracksByID[id]
+            songsByID[id]
         }
-    }
-
-    var artists: [Artist] {
-        return Dictionary(grouping: songs, by: { $0.artist })
-            .map { Artist(name: $0.key, tracks: $0.value) }
-            .sorted { $0.name < $1.name }
-    }
-
-    var albums: [Album] {
-        return Dictionary(
-            grouping: songs,
-            by: { "\($0.artist)|\($0.albumTitle)" }
-        )
-        .map {
-            Album(
-                title: $0.value.first?.albumTitle ?? "",
-                artist: $0.value.first?.artist ?? "",
-                tracks: $0.value
-            )
-        }
-        .sorted {
-            $0.title < $1.title
-        }
-    }
-
-    var genres: [Genre] {
-        return Dictionary(grouping: songs, by: { $0.genre })
-            .map { Genre(name: $0.key, tracks: $0.value) }
-            .sorted { $0.name < $1.name }
     }
 
     // MARK: - FUNCTIONS
 
-    /// Prompts for library access if needed, then starts loading on success.
-    ///
-    /// Awaits only the permission prompt, not the fetch, so onboarding can move
-    /// on the moment the user answers instead of sitting on a spinner while a
-    /// large library reads.
     func requestAccess() async {
-        if ScreenshotMode.isActive {
-            songs = ScreenshotMode.demoTracks
-            hasLoaded = true
-            return
-        }
         guard await musicService.requestAuthorization() else {
             permissionDenied = true  // ← tell the UI
             return
         }
-        fetchSongs()
+        fetchLibrary()
     }
 
-    /// Fire-and-forget entry point for callers that just want the library
-    /// populated and have no step to advance.
     func loadSongs() {
         Task { await requestAccess() }
     }
 
-    private func fetchSongs() {
-        Task.detached(priority: .userInitiated) {
-            let fetchedSongs = self.musicService.fetchAllSongs()
-            await MainActor.run {
-                self.songs = fetchedSongs
-                self.hasLoaded = true
+    private func fetchLibrary() {
+        Task {
+            do {
+                songs = try await musicService.fetchAll(Song.self)
+                artists = try await musicService.fetchAll(Artist.self)
+                    .sorted { $0.name < $1.name }
+                albums = try await musicService.fetchAll(Album.self)
+                    .sorted { $0.title < $1.title }
+                genres = try await musicService.fetchAll(Genre.self)
+                    .sorted { $0.name < $1.name }
+            } catch {
+                log("Fetching songs failed: \(error)")
             }
+            hasLoaded = true
         }
     }
 
-    func addToRecentlyPlayed(id: UInt64) {
+    func songs(in album: Album) -> [Song] {
+        songs.filter {
+            $0.albumTitle == album.title && $0.artistName == album.artistName
+        }
+    }
+
+    func songs(by artist: Artist) -> [Song] {
+        songs.filter { $0.artistName == artist.name }
+    }
+
+    func songs(in genre: Genre) -> [Song] {
+        songs.filter { $0.genreNames.contains(genre.name) }
+    }
+
+    func addToRecentlyPlayed(id: MusicItemID) {
         libraryStore.addToRecentlyPlayed(id: id)
     }
 }

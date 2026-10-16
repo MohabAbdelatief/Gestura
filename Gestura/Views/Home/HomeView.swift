@@ -5,7 +5,7 @@
 //  Created by Mohab Abdelatief on 15/05/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct HomeView: View {
@@ -16,6 +16,15 @@ struct HomeView: View {
 
     @ObservedObject var viewModel: PlayerViewModel
     @ObservedObject var musicLibrary: MusicLibrary
+
+    // MARK: - SUBSCRIPTION
+
+    @State private var subscription: MusicSubscription?
+    @State private var showSubscriptionOffer = false
+
+    private let subscriptionOfferOptions = MusicSubscriptionOffer.Options(
+        messageIdentifier: .playMusic
+    )
 
     // MARK: - VIEW
 
@@ -42,6 +51,10 @@ struct HomeView: View {
             }
             .padding()
 
+            if let subscription, subscription.canBecomeSubscriber {
+                musicSubscriptionButton
+            }
+
             Group {
                 if musicLibrary.permissionDenied {
                     musicAccessDeniedView
@@ -50,11 +63,11 @@ struct HomeView: View {
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
-                            if !recentlyPlayedTracks.isEmpty {
+                            if !recentlyPlayedSongs.isEmpty {
                                 continueListeningSection
                             }
 
-                            if !favoriteTracks.isEmpty {
+                            if !favoriteSongs.isEmpty {
                                 favoritesSection
                             }
 
@@ -68,10 +81,27 @@ struct HomeView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsTabView(viewModel: viewModel)
             }
+            .task(id: musicLibrary.hasLoaded) {
+                subscription = try? await MusicSubscription.current
+                for await update in MusicSubscription.subscriptionUpdates {
+                    subscription = update
+                }
+            }
         }
     }
 
     // MARK: - HELPER VIEWS
+
+    private var musicSubscriptionButton: some View {
+        Button("Subscribe to Apple Music", systemImage: "music.note") {
+            showSubscriptionOffer = true
+        }
+        .buttonStyle(.borderedProminent)
+        .musicSubscriptionOffer(
+            isPresented: $showSubscriptionOffer,
+            options: subscriptionOfferOptions
+        )
+    }
 
     private var isLibraryEmpty: Bool {
         musicLibrary.hasLoaded && musicLibrary.songs.isEmpty
@@ -104,17 +134,17 @@ struct HomeView: View {
     }
 
     private var continueListeningSection: some View {
-        trackSection(
+        songSection(
             title: "Continue Listening",
-            tracks: recentlyPlayedTracks,
+            songs: recentlyPlayedSongs,
             size: HomeLayout.featuredCardSize
         )
     }
 
     private var favoritesSection: some View {
-        trackSection(
+        songSection(
             title: "What You Love",
-            tracks: favoriteTracks,
+            songs: favoriteSongs,
             size: HomeLayout.compactCardSize
         )
     }
@@ -136,9 +166,9 @@ struct HomeView: View {
         }
     }
 
-    private func trackSection(
+    private func songSection(
         title: String,
-        tracks: [Track],
+        songs: [Song],
         size: CGFloat
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -148,25 +178,25 @@ struct HomeView: View {
 
             horizontalScroll {
                 HStack(spacing: 16) {
-                    ForEach(tracks) { track in
-                        trackCard(for: track, in: tracks, size: size)
+                    ForEach(songs) { song in
+                        songCard(for: song, in: songs, size: size)
                     }
                 }
             }
         }
     }
 
-    private func trackCard(
-        for track: Track,
-        in tracks: [Track],
+    private func songCard(
+        for song: Song,
+        in songs: [Song],
         size: CGFloat
     ) -> some View {
         Button {
-            viewModel.play(track, in: tracks)
+            viewModel.play(song, in: songs)
         } label: {
             ZStack(alignment: .bottomLeading) {
-                artworkOrPlaceholder(for: track, size: size)
-                trackCardTextOverlay(for: track, width: size)
+                artworkOrPlaceholder(for: song, size: size)
+                songCardTextOverlay(for: song, width: size)
             }
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -180,28 +210,32 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    private func artworkOrPlaceholder(for track: Track, size: CGFloat) -> some View {
-        ArtworkView(
-            artwork: track.artwork,
-            persistentID: track.id,
-            size: size
-        )
-        .id(track.id)        // ← add this
-        .scaledToFill()
+    private func artworkOrPlaceholder(for song: Song, size: CGFloat) -> some View {
+        Group {
+            if let artwork = song.artwork {
+                ArtworkImage(artwork, width: size, height: size)
+            } else {
+                ZStack {
+                    Rectangle().fill(Color(.systemGray5))
+                    Image(systemName: "music.note")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
         .frame(width: size, height: size)
-        .clipped()
     }
 
-    private func trackCardTextOverlay(for track: Track, width: CGFloat)
+    private func songCardTextOverlay(for song: Song, width: CGFloat)
         -> some View
     {
         VStack(alignment: .leading, spacing: 2) {
-            Text(track.title)
+            Text(song.title)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .lineLimit(1)
 
-            Text(track.artist)
+            Text(song.artistName)
                 .font(.caption)
                 .lineLimit(1)
         }
@@ -283,12 +317,12 @@ struct HomeView: View {
 
     // MARK: - COMPUTED PROPERTIES
 
-    private var recentlyPlayedTracks: [Track] {
-        musicLibrary.recentlyPlayedTracks
+    private var recentlyPlayedSongs: [Song] {
+        musicLibrary.recentlyPlayedSongs
     }
 
-    private var favoriteTracks: [Track] {
-        musicLibrary.favoriteTracks
+    private var favoriteSongs: [Song] {
+        musicLibrary.favoriteSongs
     }
 
     // MARK: - LAYOUT

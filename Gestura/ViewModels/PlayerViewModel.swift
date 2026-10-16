@@ -7,7 +7,7 @@
 
 import Combine
 import Foundation
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 @MainActor
@@ -15,11 +15,8 @@ class PlayerViewModel: ObservableObject {
     // MARK: - PROPERTIES
 
     private var timerTask: Task<Void, Never>?
-    private var pendingReconcileTask: Task<Void, Never>?
     private let musicService = MusicService.shared
-    private var nowPlayingObserver: NSObjectProtocol?
-    private var playbackStateObserver: NSObjectProtocol?
-    private var originalQueue: [Track] = []
+    private var originalQueue: [Song] = []
     private let musicLibrary: MusicLibrary
 
     let volumeManager = VolumeManager()
@@ -31,20 +28,20 @@ class PlayerViewModel: ObservableObject {
     @Published var currentTime: TimeInterval = 0
     @Published var isScrubbing: Bool = false
     @Published var scrubTime: TimeInterval = 0
-    @Published var queue: [Track] = []
+    @Published var queue: [Song] = []
     @Published var queueIndex: Int = 0
     @Published var isShuffleEnabled: Bool = false
 
     // MARK: - COMPUTED PROPERTIES
 
-    var currentTrack: Track? {
+    var currentSong: Song? {
         switch playerState {
         case .idle:
             return nil
-        case .playing(let track):
-            return track
-        case .paused(let track):
-            return track
+        case .playing(let song):
+            return song
+        case .paused(let song):
+            return song
         }
     }
 
@@ -55,7 +52,7 @@ class PlayerViewModel: ObservableObject {
         return false
     }
 
-    var currentQueueTrack: Track? {
+    var currentQueueSong: Song? {
         guard queue.indices.contains(queueIndex) else { return nil }
         return queue[queueIndex]
     }
@@ -86,54 +83,31 @@ class PlayerViewModel: ObservableObject {
 
     // MARK: - OBSERVERS
 
-    func observeNowPlaying() {
-        nowPlayingObserver = NotificationCenter.default.addObserver(
-            forName: .MPMusicPlayerControllerNowPlayingItemDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.updateNowPlaying()
+    func observePlayer() {
+        Task {
+            for await _ in Observations({ self.musicService.currentEntryIndex }) {
+                updateNowPlaying()
             }
         }
-        playbackStateObserver = NotificationCenter.default.addObserver(
-            forName: .MPMusicPlayerControllerPlaybackStateDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.handlePlaybackStateChange()
+        Task {
+            for await _ in Observations({ self.musicService.playbackStatus }) {
+                reconcilePlaybackState()
             }
-        }
-        musicService.startObserving()
-    }
-
-    private func handlePlaybackStateChange() {
-        reconcilePlaybackState()
-        // MPMusicPlayerController.applicationQueuePlayer posts the state-change
-        // notification before its `playbackState` property finishes propagating,
-        // so an immediate reconcile can read a stale value. Re-check shortly
-        // after to settle the UI when the property catches up.
-        pendingReconcileTask?.cancel()
-        pendingReconcileTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(150))
-            guard !Task.isCancelled else { return }
-            self?.reconcilePlaybackState()
         }
     }
 
     private func reconcilePlaybackState() {
-        guard let track = currentTrack else { return }
+        guard let song = currentSong else { return }
 
-        switch musicService.playbackState {
+        switch musicService.playbackStatus {
         case .playing:
             if !isPlaying {
-                playerState = .playing(track)
+                playerState = .playing(song)
                 startTimer()
             }
         case .paused, .stopped, .interrupted:
             if isPlaying {
-                playerState = .paused(track)
+                playerState = .paused(song)
                 stopTimer()
             }
         case .seekingForward, .seekingBackward:
@@ -143,72 +117,33 @@ class PlayerViewModel: ObservableObject {
         }
     }
 
-    deinit {
-        if let observer = nowPlayingObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        if let observer = playbackStateObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        pendingReconcileTask?.cancel()
-        let service = musicService
-        Task { @MainActor in
-            service.stopObserving()
-        }
-    }
-
     // MARK: - PLAYBACK
 
-    /// Screenshot capture only: poses a "now playing" state without touching
-    /// the system player, which has nothing to play in the Simulator.
-    func stageForScreenshots(
-        queue tracks: [Track],
-        playingIndex: Int,
-        at time: TimeInterval
-    ) {
-        guard ScreenshotMode.isActive,
-            tracks.indices.contains(playingIndex)
-        else { return }
-        originalQueue = tracks
-        queue = tracks
-        queueIndex = playingIndex
-        playerState = .playing(tracks[playingIndex])
-        currentTime = time
-    }
-
-    func play(_ track: Track, in context: [Track]) {
+    func play(_ song: Song, in context: [Song]) {
         originalQueue = context
 
         if isShuffleEnabled {
-            var rest = context.filter { $0.id != track.id }
+            var rest = context.filter { $0.id != song.id }
             rest.shuffle()
-            queue = [track] + rest
+            queue = [song] + rest
             queueIndex = 0
         } else {
             queue = context
-            queueIndex = context.firstIndex(where: { $0.id == track.id }) ?? 0
+            queueIndex = context.firstIndex(where: { $0.id == song.id }) ?? 0
         }
 
-        playCurrentQueueTrack()
+        playCurrentQueueSong()
     }
-
-    /// Why `startPlayback()` couldn't begin a session, so callers can say
-    /// something accurate instead of conflating "still loading" with "empty".
+    
     enum StartPlaybackResult {
-        case started(Track)
+        case started(Song)
         case libraryLoading
         case libraryEmpty
         case accessDenied
     }
 
-    /// What `startPlayback()` would do right now, without doing it — so the
-    /// idle recognizer screen can name the track an open palm will start.
-    ///
-    /// The no-history case is deliberately `.shuffleLibrary` rather than a
-    /// named track: the fallback picks at random, so previewing a specific
-    /// title would promise something `startPlayback()` wouldn't deliver.
     enum PendingStart {
-        case resume(Track)
+        case resume(Song)
         case shuffleLibrary
         case libraryLoading
         case libraryEmpty
@@ -219,18 +154,15 @@ class PlayerViewModel: ObservableObject {
         if musicLibrary.permissionDenied { return .accessDenied }
         guard musicLibrary.hasLoaded else { return .libraryLoading }
 
-        if let recent = musicLibrary.recentlyPlayedTracks.first {
+        if let recent = musicLibrary.recentlyPlayedSongs.first {
             return .resume(recent)
         }
         return musicLibrary.songs.isEmpty ? .libraryEmpty : .shuffleLibrary
     }
 
-    /// Starts playback when nothing is loaded, so a gesture can begin a
-    /// session without touching the screen. Routed through `pendingStart` so
-    /// what the idle screen promises and what this does can't drift apart.
     @discardableResult
     func startPlayback() -> StartPlaybackResult {
-        if let current = currentTrack { return .started(current) }
+        if let current = currentSong { return .started(current) }
 
         switch pendingStart {
         case .accessDenied:
@@ -239,9 +171,9 @@ class PlayerViewModel: ObservableObject {
             return .libraryLoading
         case .libraryEmpty:
             return .libraryEmpty
-        case .resume(let track):
-            play(track, in: musicLibrary.recentlyPlayedTracks)
-            return .started(track)
+        case .resume(let song):
+            play(song, in: musicLibrary.recentlyPlayedSongs)
+            return .started(song)
         case .shuffleLibrary:
             guard let song = musicLibrary.songs.randomElement() else {
                 return .libraryEmpty
@@ -273,14 +205,14 @@ class PlayerViewModel: ObservableObject {
         switch playerState {
         case .idle:
             return nil
-        case .playing(let track):
+        case .playing(let song):
             musicService.pause()
-            playerState = .paused(track)
+            playerState = .paused(song)
             stopTimer()
             return false
-        case .paused(let track):
+        case .paused(let song):
             musicService.resume()
-            playerState = .playing(track)
+            playerState = .playing(song)
             startTimer()
             return true
         }
@@ -334,20 +266,17 @@ class PlayerViewModel: ObservableObject {
     // MARK: - QUEUE MANAGEMENT
 
     func removeQueueItem(at offsets: IndexSet) {
-        let currentTrackID = currentQueueTrack?.id
-        let removedTracks = offsets.compactMap { index in
-            queue.indices.contains(index) ? queue[index] : nil
-        }
+        let currentSongID = currentQueueSong?.id
 
         queue.remove(atOffsets: offsets)
-        musicService.removeFromSystemQueue(tracks: removedTracks)
+        musicService.removeFromQueue(atOffsets: offsets)
 
         if queue.isEmpty {
             playerState = .idle
             return
         }
 
-        if let id = currentTrackID,
+        if let id = currentSongID,
             let newIndex = queue.firstIndex(where: { $0.id == id })
         {
             queueIndex = newIndex
@@ -357,21 +286,12 @@ class PlayerViewModel: ObservableObject {
     }
 
     func moveQueueItems(from source: IndexSet, to destination: Int) {
-        let currentTrackID = currentQueueTrack?.id
-        let movedTracks = source.compactMap {
-            queue.indices.contains($0) ? queue[$0] : nil
-        }
+        let currentSongID = currentQueueSong?.id
 
         queue.move(fromOffsets: source, toOffset: destination)
+        musicService.moveInQueue(fromOffsets: source, toOffset: destination)
 
-        for track in movedTracks {
-            guard let newIndex = queue.firstIndex(where: { $0.id == track.id })
-            else { continue }
-            let predecessor = newIndex > 0 ? queue[newIndex - 1] : nil
-            musicService.moveInSystemQueue(track: track, after: predecessor)
-        }
-
-        if let id = currentTrackID,
+        if let id = currentSongID,
             let newIndex = queue.firstIndex(where: { $0.id == id })
         {
             queueIndex = newIndex
@@ -379,22 +299,19 @@ class PlayerViewModel: ObservableObject {
     }
 
     private func updateNowPlaying() {
-        guard let nowPlaying = musicService.nowPlayingItem else {
-            return
-        }
-        if let index = queue.firstIndex(where: {
-            $0.id == nowPlaying.persistentID
-        }) {
+        if let index = musicService.currentEntryIndex,
+            queue.indices.contains(index)
+        {
             queueIndex = index
-            let track = queue[index]
-            musicLibrary.addToRecentlyPlayed(id: track.id)
+            let song = queue[index]
+            musicLibrary.addToRecentlyPlayed(id: song.id)
 
-            switch musicService.playbackState {
+            switch musicService.playbackStatus {
             case .playing:
-                playerState = .playing(track)
+                playerState = .playing(song)
                 startTimer()
             case .paused, .stopped, .interrupted:
-                playerState = .paused(track)
+                playerState = .paused(song)
                 stopTimer()
             case .seekingForward, .seekingBackward:
                 break
@@ -404,17 +321,17 @@ class PlayerViewModel: ObservableObject {
         }
     }
 
-    private func playCurrentQueueTrack() {
+    private func playCurrentQueueSong() {
         guard queue.indices.contains(queueIndex) else { return }
-        let track = queue[queueIndex]
+        let song = queue[queueIndex]
         musicService.play(queue, startingAt: queueIndex)
-        playerState = .playing(track)
+        playerState = .playing(song)
         startTimer()
     }
 
     func jumpTo(_ index: Int) {
         queueIndex = index
-        playCurrentQueueTrack()
+        playCurrentQueueSong()
     }
 
     // MARK: - HELPERS

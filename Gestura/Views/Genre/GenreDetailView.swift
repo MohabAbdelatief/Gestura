@@ -5,7 +5,7 @@
 //  Created by Mohab Abdelatief on 08/05/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct GenreDetailView: View {
@@ -13,9 +13,14 @@ struct GenreDetailView: View {
 
     let genre: Genre
 
+    private var songs: [Song] {
+        musicLibrary.songs(in: genre)
+    }
+
     // MARK: - PROPERTY WRAPPED OBJECTS
 
     @ObservedObject var viewModel: PlayerViewModel
+    @ObservedObject var musicLibrary: MusicLibrary
 
     // MARK: - VIEW
 
@@ -23,11 +28,11 @@ struct GenreDetailView: View {
         VStack {
             List {
                 artworkHeader
-                ForEach(genre.tracks) { song in
+                ForEach(songs) { song in
                     Button {
-                        viewModel.play(song, in: genre.tracks)
+                        viewModel.play(song, in: songs)
                     } label: {
-                        SongRowView(track: song, viewModel: viewModel)
+                        SongRowView(song: song, viewModel: viewModel)
                     }
                     .buttonStyle(.plain)
                 }
@@ -41,15 +46,12 @@ struct GenreDetailView: View {
 
     private var artworkHeader: some View {
         Group {
-            if let image = genre.artwork?.image(
-                at: CGSize(width: 400, height: 400)
-            ) {
-                Image(uiImage: image)
-                    .resizable()
-                    .cornerRadius(16)
-                    .aspectRatio(1, contentMode: .fill)
-                    .frame(maxWidth: .infinity)
-
+            if let artwork = songs.first(where: { $0.artwork != nil })?.artwork {
+                GeometryReader { proxy in
+                    ArtworkImage(artwork, width: proxy.size.width)
+                        .cornerRadius(16)
+                }
+                .aspectRatio(1, contentMode: .fit)
             } else {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.gray.opacity(0.3))
