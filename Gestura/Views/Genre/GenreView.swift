@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+internal import MusicKit
 
 struct GenreView: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -46,10 +47,11 @@ struct GenreView: View {
                         NavigationLink(
                             destination: GenreDetailView(
                                 genre: genre,
-                                viewModel: viewModel
+                                viewModel: viewModel,
+                                musicLibrary: musicLibrary
                             )
                         ) {
-                            GenreRowView(genre: genre)
+                            GenreRowView(genre: genre, musicLibrary: musicLibrary)
                         }
                     }
                 }

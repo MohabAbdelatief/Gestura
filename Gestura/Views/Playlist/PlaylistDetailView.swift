@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+internal import MusicKit
 
 struct PlaylistDetailView: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -34,9 +35,9 @@ struct PlaylistDetailView: View {
             )
     }
 
-    private var tracks: [Track] {
-        playlist.trackIDs.compactMap { id in
-            musicLibrary.tracksByID[id]
+    private var songs: [Song] {
+        playlist.songIDs.compactMap { id in
+            musicLibrary.song(for: MusicItemID(id))
         }
     }
 
@@ -44,24 +45,29 @@ struct PlaylistDetailView: View {
 
     var body: some View {
         Group {
-            if tracks.isEmpty {
+            if songs.isEmpty {
                 ContentUnavailableView(
                     "Empty Playlist",
                     systemImage: "music.note.list",
                     description: Text("Add songs from your library.")
                 )
             } else {
-                tracksList
+                songsList
             }
         }
         .navigationTitle(playlist.name)
+        .task(id: playlist.songIDs) {
+            await musicLibrary.loadCatalogSongs(
+                ids: playlist.songIDs.map { MusicItemID($0) }
+            )
+        }
         .toolbar {
-            if !tracks.isEmpty {
+            if !songs.isEmpty {
                 ToolbarItemGroup(placement: .topBarLeading) {
                     Button {
                         viewModel.setShuffleEnabled(false)
-                        if let firstTrack = tracks.first {
-                            viewModel.play(firstTrack, in: tracks)
+                        if let firstSong = songs.first {
+                            viewModel.play(firstSong, in: songs)
                         }
                     } label: {
                         Label("Play All", systemImage: "play.fill")
@@ -69,8 +75,8 @@ struct PlaylistDetailView: View {
 
                     Button {
                         viewModel.setShuffleEnabled(true)
-                        if let randomTrack = tracks.randomElement() {
-                            viewModel.play(randomTrack, in: tracks)
+                        if let randomSong = songs.randomElement() {
+                            viewModel.play(randomSong, in: songs)
                         }
                     } label: {
                         Label("Shuffle", systemImage: "shuffle")
@@ -86,52 +92,53 @@ struct PlaylistDetailView: View {
     }
 
     // MARK: - HELPER VIEWS
-    private var tracksList: some View {
+    private var songsList: some View {
         List {
             artworkHeader
-            ForEach(tracks) { track in
-                trackRow(for: track)
+            ForEach(songs) { song in
+                songRow(for: song)
             }
             .onDelete { offsets in
                 let store = PlaylistStore(context: modelContext)
-                let idsToDelete = offsets.map { tracks[$0].id }
+                let idsToDelete = offsets.map { songs[$0].id }
                 for id in idsToDelete {
-                    store.removeTrack(trackID: id, from: playlist)
+                    store.removeSong(id: id, from: playlist)
                 }
             }
             .onMove { source, destination in
-                let newOrder = reorderedTrackIDs(
+                let newOrder = reorderedSongIDs(
                     source: source,
                     destination: destination
                 )
                 let store = PlaylistStore(context: modelContext)
-                store.setTrackIDs(newOrder, for: playlist)
+                store.setSongIDs(newOrder, for: playlist)
             }
         }
     }
 
-    private func trackRow(for track: Track) -> some View {
+    private func songRow(for song: Song) -> some View {
         Button {
-            viewModel.play(track, in: tracks)
+            viewModel.play(song, in: songs)
         } label: {
-            SongRowView(track: track, viewModel: viewModel)
+            SongRowView(song: song, viewModel: viewModel)
         }
         .buttonStyle(.plain)
     }
 
     // MARK: - HELPERS
 
-    private func reorderedTrackIDs(source: IndexSet, destination: Int)
-        -> [UInt64]
+    private func reorderedSongIDs(source: IndexSet, destination: Int)
+        -> [MusicItemID]
     {
-        var reorderedTracks = tracks
-        reorderedTracks.move(fromOffsets: source, toOffset: destination)
-        let newResolvedIDs = reorderedTracks.map { $0.id }
+        var reorderedSongs = songs
+        reorderedSongs.move(fromOffsets: source, toOffset: destination)
+        let newResolvedIDs = reorderedSongs.map { $0.id }
 
-        let resolvedSet = Set(tracks.map { $0.id })
+        let resolvedSet = Set(songs.map { $0.id })
         var queue = newResolvedIDs
 
-        return playlist.trackIDs.map { id in
+        return playlist.songIDs.map { rawID in
+            let id = MusicItemID(rawID)
             if resolvedSet.contains(id) {
                 return queue.removeFirst()
             } else {

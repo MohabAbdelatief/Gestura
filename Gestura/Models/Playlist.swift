@@ -15,7 +15,7 @@ final class Playlist {
     var id: UUID
     var createdAt: Date
     var name: String
-    var trackIDs: [UInt64]
+    var songIDs: [String] = []
 
     // MARK: - INIT
 
@@ -23,12 +23,12 @@ final class Playlist {
         id: UUID = UUID(),
         createdAt: Date = Date(),
         name: String,
-        trackIDs: [UInt64] = []
+        songIDs: [String] = []
     ) {
         self.id = id
         self.createdAt = createdAt
         self.name = name
-        self.trackIDs = trackIDs
+        self.songIDs = songIDs
     }
 
 }

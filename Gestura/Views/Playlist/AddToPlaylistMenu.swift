@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+internal import MusicKit
 
 struct AddToPlaylistMenu: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -17,7 +18,7 @@ struct AddToPlaylistMenu: View {
 
     // MARK: - PROPERTIES
 
-    let track: Track
+    let song: Song
     let onCreatePlaylist: () -> Void
 
     // MARK: - VIEW
@@ -47,19 +48,19 @@ struct AddToPlaylistMenu: View {
     // MARK: - HELPER VIEWS
 
     private func playlistButton(for playlist: Playlist) -> some View {
-        let containsTrack = playlist.trackIDs.contains(track.id)
+        let containsSong = playlist.songIDs.contains(song.id.rawValue)
         return Button {
             let store = PlaylistStore(context: modelContext)
-            store.addTrack(trackID: track.id, to: playlist)
+            store.addSong(id: song.id, to: playlist)
             feedbackCenter.show("Added to \(playlist.name)")
 
         } label: {
             Label(
                 playlist.name,
-                systemImage: containsTrack ? "checkmark" : "music.note.list"
+                systemImage: containsSong ? "checkmark" : "music.note.list"
             )
         }
-        .disabled(containsTrack)
+        .disabled(containsSong)
 
     }
 }

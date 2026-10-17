@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+internal import MusicKit
 
 struct FavoritesView: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -16,32 +17,35 @@ struct FavoritesView: View {
 
     // MARK: - STATE
     @AppStorage("favoritesSortingOption") private var favoritesSortingOption:
-        SortOption = .title
+        SortOption = .dateAdded
     @State private var searchText = ""
 
     // MARK: - COMPUTED PROPERTIES
 
-    var filteredSongs: [Track] {
-        guard !searchText.isEmpty else { return musicLibrary.favoriteTracks }
-        return musicLibrary.favoriteTracks.filter {
+    var filteredSongs: [Song] {
+        guard !searchText.isEmpty else { return musicLibrary.favoriteSongs }
+        return musicLibrary.favoriteSongs.filter {
             $0.title.localizedCaseInsensitiveContains(searchText)
-                || $0.artist.localizedCaseInsensitiveContains(searchText)
-                || $0.albumTitle.localizedCaseInsensitiveContains(searchText)
+                || $0.artistName.localizedCaseInsensitiveContains(searchText)
+                || ($0.albumTitle ?? "").localizedCaseInsensitiveContains(
+                    searchText
+                )
         }
     }
 
-    var sortedFavorites: [Track] {
+    var sortedFavorites: [Song] {
         switch favoritesSortingOption {
         case .title:
             return filteredSongs.sorted { $0.title < $1.title }
         case .artist:
-            return filteredSongs.sorted { $0.artist < $1.artist }
+            return filteredSongs.sorted { $0.artistName < $1.artistName }
         case .album:
-            return filteredSongs.sorted { $0.albumTitle < $1.albumTitle }
+            return filteredSongs.sorted {
+                ($0.albumTitle ?? "") < ($1.albumTitle ?? "")
+            }
         case .dateAdded:
-            return filteredSongs.sorted { $1.dateAdded < $0.dateAdded }
+            return filteredSongs
         }
-
     }
 
     // MARK: - HELPER VIEWS
@@ -65,7 +69,7 @@ struct FavoritesView: View {
 
     var body: some View {
         Group {
-            if musicLibrary.favoriteTracks.isEmpty {
+            if musicLibrary.favoriteSongs.isEmpty {
                 ContentUnavailableView(
                     "No Favorites",
                     systemImage: "star",
@@ -78,11 +82,11 @@ struct FavoritesView: View {
             } else {
                 List {
                     artworkHeader
-                    ForEach(sortedFavorites) { track in
+                    ForEach(sortedFavorites) { song in
                         Button {
-                            viewModel.play(track, in: sortedFavorites)
+                            viewModel.play(song, in: sortedFavorites)
                         } label: {
-                            SongRowView(track: track, viewModel: viewModel)
+                            SongRowView(song: song, viewModel: viewModel)
                         }
                         .buttonStyle(.plain)
                     }
@@ -94,7 +98,7 @@ struct FavoritesView: View {
         .searchable(text: $searchText)
         .toolbar {
             PlayShuffleToolbarButtons(
-                tracks: sortedFavorites,
+                songs: sortedFavorites,
                 viewModel: viewModel
             )
             SortOptionMenu(selection: $favoritesSortingOption)

@@ -78,7 +78,7 @@ struct QueueView: View {
             dismiss()
         } label: {
             SongRowView(
-                track: viewModel.queue[index],
+                song: viewModel.queue[index],
                 viewModel: viewModel
             )
             .opacity(

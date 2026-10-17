@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+internal import MusicKit
 
 @MainActor
 final class PlaylistStore {
@@ -23,8 +24,8 @@ final class PlaylistStore {
 
     // MARK: - DATA HANDLING
 
-    func setTrackIDs(_ ids: [UInt64], for playlist: Playlist) {
-        playlist.trackIDs = ids
+    func setSongIDs(_ ids: [MusicItemID], for playlist: Playlist) {
+        playlist.songIDs = ids.map(\.rawValue)
         tryToSave()
     }
 
@@ -45,23 +46,23 @@ final class PlaylistStore {
         tryToSave()
     }
 
-    func addTrack(trackID: UInt64, to playlist: Playlist) {
-        guard !playlist.trackIDs.contains(trackID) else { return }
-        playlist.trackIDs.append(trackID)
+    func addSong(id: MusicItemID, to playlist: Playlist) {
+        guard !playlist.songIDs.contains(id.rawValue) else { return }
+        playlist.songIDs.append(id.rawValue)
         tryToSave()
     }
 
-    func removeTrack(trackID: UInt64, from playlist: Playlist) {
-        playlist.trackIDs.removeAll(where: { $0 == trackID })
+    func removeSong(id: MusicItemID, from playlist: Playlist) {
+        playlist.songIDs.removeAll(where: { $0 == id.rawValue })
         tryToSave()
     }
 
-    func moveTrack(
+    func moveSong(
         in playlist: Playlist,
         from source: IndexSet,
         to destination: Int
     ) {
-        playlist.trackIDs.move(fromOffsets: source, toOffset: destination)
+        playlist.songIDs.move(fromOffsets: source, toOffset: destination)
         tryToSave()
     }
 

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+internal import MusicKit
 
 struct RecentlyPlayedView: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -18,7 +19,7 @@ struct RecentlyPlayedView: View {
 
     var body: some View {
         Group {
-            if musicLibrary.recentlyPlayedTracks.isEmpty {
+            if musicLibrary.recentlyPlayedSongs.isEmpty {
                 ContentUnavailableView(
                     "Nothing Played Yet",
                     systemImage: "clock",
@@ -28,14 +29,14 @@ struct RecentlyPlayedView: View {
                 )
             } else {
                 List {
-                    ForEach(musicLibrary.recentlyPlayedTracks) { track in
+                    ForEach(musicLibrary.recentlyPlayedSongs) { song in
                         Button {
                             viewModel.play(
-                                track,
-                                in: musicLibrary.recentlyPlayedTracks
+                                song,
+                                in: musicLibrary.recentlyPlayedSongs
                             )
                         } label: {
-                            SongRowView(track: track, viewModel: viewModel)
+                            SongRowView(song: song, viewModel: viewModel)
                         }
                         .buttonStyle(.plain)
                     }
@@ -46,7 +47,7 @@ struct RecentlyPlayedView: View {
         .navigationTitle("Recently Played")
         .toolbar {
             PlayShuffleToolbarButtons(
-                tracks: musicLibrary.recentlyPlayedTracks,
+                songs: musicLibrary.recentlyPlayedSongs,
                 viewModel: viewModel
             )
         }

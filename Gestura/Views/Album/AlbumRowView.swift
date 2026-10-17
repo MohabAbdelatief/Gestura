@@ -5,7 +5,7 @@
 //  Created by Mohab Abdelatief on 06/05/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct AlbumRowView: View {
@@ -21,7 +21,7 @@ struct AlbumRowView: View {
             VStack(alignment: .leading) {
                 Text(album.title)
                     .font(.headline)
-                Text(album.artist)
+                Text(album.artistName)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -33,12 +33,8 @@ struct AlbumRowView: View {
 
     private var artworkThumbnail: some View {
         Group {
-            if let image = album.artwork?.image(
-                at: CGSize(width: 44, height: 44)
-            ) {
-                Image(uiImage: image)
-                    .resizable()
-                    .frame(width: 44, height: 44)
+            if let artwork = album.artwork {
+                ArtworkImage(artwork, width: 44, height: 44)
                     .cornerRadius(6)
             } else {
                 RoundedRectangle(cornerRadius: 6)

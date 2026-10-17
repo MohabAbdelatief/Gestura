@@ -7,6 +7,7 @@
 
 import Combine
 import Foundation
+internal import MusicKit
 
 @MainActor
 final class PlaybackIntentDispatcher: ObservableObject {
@@ -48,8 +49,8 @@ final class PlaybackIntentDispatcher: ObservableObject {
         case .previousTrack:
             player.previousTrack()
             feedback.show("Previous Song")
-        case .setFavorite(let trackID, let shouldBeFavorited):
-            let isCurrentlyFavorited = library.isFavorite(id: trackID)
+        case .setFavorite(let songID, let shouldBeFavorited):
+            let isCurrentlyFavorited = library.isFavorite(id: songID)
             if isCurrentlyFavorited == shouldBeFavorited {
                 if shouldBeFavorited {
                     feedback.show("Already in Favorites")
@@ -58,10 +59,10 @@ final class PlaybackIntentDispatcher: ObservableObject {
                 }
             } else {
                 if shouldBeFavorited {
-                    library.addFavorite(id: trackID)
+                    library.addFavorite(id: songID)
                     feedback.show("Added to Favorites")
                 } else {
-                    library.removeFavorite(id: trackID)
+                    library.removeFavorite(id: songID)
                     feedback.show("Removed from Favorites")
                 }
             }

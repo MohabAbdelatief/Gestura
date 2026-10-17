@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+internal import MusicKit
 
 struct GesturaTabView: View {
     // MARK: - STATE
@@ -133,12 +134,21 @@ struct GesturaTabView: View {
 
     @ViewBuilder
     private var artworkView: some View {
-        if let track = viewModel.currentTrack {
-            ArtworkView(
-                artwork: track.artwork,
-                persistentID: track.id,
-                size: 600
-            )
+        if let song = viewModel.currentSong {
+            Group {
+                if let artwork = song.artwork {
+                    GeometryReader { proxy in
+                        ArtworkImage(artwork, width: proxy.size.width)
+                    }
+                } else {
+                    ZStack {
+                        Rectangle().fill(Color(.systemGray5))
+                        Image(systemName: "music.note")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             .aspectRatio(1, contentMode: .fit)
             .frame(maxWidth: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -149,35 +159,35 @@ struct GesturaTabView: View {
 
     @ViewBuilder
     private var songInfoRow: some View {
-        if let track = viewModel.currentTrack {
+        if let song = viewModel.currentSong {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(track.title)
+                    Text(song.title)
                         .font(.title3.weight(.semibold))
                         .lineLimit(1)
                         .foregroundStyle(.primary)
-                    Text(track.artist)
+                    Text(song.artistName)
                         .font(.subheadline)
                         .lineLimit(1)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button {
-                    let isFavorited = libraryStore.isFavorite(id: track.id)
+                    let isFavorited = libraryStore.isFavorite(id: song.id)
                     dispatcher.execute(
                         .setFavorite(
-                            id: track.id,
+                            id: song.id,
                             isFavorited: !isFavorited
                         )
                     )
                 } label: {
                     Image(
-                        systemName: libraryStore.isFavorite(id: track.id)
+                        systemName: libraryStore.isFavorite(id: song.id)
                             ? "star.fill" : "star"
                     )
                     .font(.title2)
                     .foregroundStyle(
-                        libraryStore.isFavorite(id: track.id)
+                        libraryStore.isFavorite(id: song.id)
                             ? .primary : .secondary
                     )
                     .padding(12)
@@ -195,11 +205,11 @@ struct GesturaTabView: View {
     @ViewBuilder
     private var idlePrompt: some View {
         switch viewModel.pendingStart {
-        case .resume(let track):
+        case .resume(let song):
             idleMessage(
                 "hand.raised.fill",
                 "Ready when you are",
-                "Hold up an open palm to play \(track.title)."
+                "Hold up an open palm to play \(song.title)."
             )
         case .shuffleLibrary:
             idleMessage(
@@ -251,7 +261,7 @@ struct GesturaTabView: View {
     @ViewBuilder
     private var activeRecognizerView: some View {
         VStack(spacing: 24) {
-            if viewModel.currentTrack == nil {
+            if viewModel.currentSong == nil {
                 idlePrompt
             } else {
                 artworkView

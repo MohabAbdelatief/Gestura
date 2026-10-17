@@ -5,14 +5,14 @@
 //  Created by Mohab Abdelatief on 29/04/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftData
 import SwiftUI
 
 struct SongRowView: View {
     // MARK: - PROPERTIES
 
-    let track: Track
+    let song: Song
 
     // MARK: - PROPERTY WRAPPED OBJECTS
 
@@ -33,7 +33,7 @@ struct SongRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             artworkThumbnail
-            trackInfo
+            songInfo
             Spacer()
             favoriteButton
             durationLabel
@@ -42,19 +42,18 @@ struct SongRowView: View {
         .contentShape(Rectangle())
         .contextMenu {
             AddToPlaylistMenu(
-                track: track,
+                song: song,
                 onCreatePlaylist: {
                     showNewPlaylistAlert = true
                 }
             )
             addToFavoritesMenu
-
         }
         .alert("New Playlist", isPresented: $showNewPlaylistAlert) {
             TextField("Playlist Name", text: $newPlaylistName)
 
             Button("Create") {
-                createPlaylistAndAddTrack()
+                createPlaylistAndAddSong()
             }
 
             Button("Cancel", role: .cancel) {
@@ -67,12 +66,8 @@ struct SongRowView: View {
 
     private var artworkThumbnail: some View {
         Group {
-            if let image = track.artwork?.image(
-                at: CGSize(width: 44, height: 44)
-            ) {
-                Image(uiImage: image)
-                    .resizable()
-                    .frame(width: 44, height: 44)
+            if let artwork = song.artwork {
+                ArtworkImage(artwork, width: 44, height: 44)
                     .cornerRadius(6)
             } else {
                 RoundedRectangle(cornerRadius: 6)
@@ -87,15 +82,15 @@ struct SongRowView: View {
         }
     }
 
-    private var trackInfo: some View {
-        let isActive = viewModel.currentTrack?.id == track.id
+    private var songInfo: some View {
+        let isActive = viewModel.currentSong?.id == song.id
         return VStack(alignment: .leading) {
-            Text(track.title)
+            Text(song.title)
                 .font(.subheadline)
                 .lineLimit(1)
                 .fontWeight(isActive ? .bold : .regular)
                 .foregroundStyle(isActive ? .blue : .primary)
-            Text(track.artist)
+            Text(song.artistName)
                 .font(.caption)
                 .foregroundStyle(isActive ? .primary : .secondary)
                 .lineLimit(1)
@@ -104,7 +99,7 @@ struct SongRowView: View {
 
     private var favoriteButton: some View {
         Group {
-            if libraryStore.isFavorite(id: track.id) {
+            if libraryStore.isFavorite(id: song.id) {
                 Image(systemName: "star.fill")
                     .foregroundStyle(.blue)
             }
@@ -112,14 +107,14 @@ struct SongRowView: View {
     }
 
     private var durationLabel: some View {
-        Text(formatTime(track.duration))
+        Text(formatTime(song.duration ?? 0))
             .font(.caption)
             .foregroundStyle(.secondary)
     }
 
     // MARK: - HELPERS
 
-    private func createPlaylistAndAddTrack() {
+    private func createPlaylistAndAddSong() {
         let trimmedName = newPlaylistName.trimmingCharacters(
             in: .whitespacesAndNewlines
         )
@@ -127,7 +122,7 @@ struct SongRowView: View {
 
         let store = PlaylistStore(context: modelContext)
         let playlist = store.createPlaylist(name: trimmedName)
-        store.addTrack(trackID: track.id, to: playlist)
+        store.addSong(id: song.id, to: playlist)
 
         newPlaylistName = ""
         feedbackCenter.show("Added to \(playlist.name)")
@@ -135,15 +130,15 @@ struct SongRowView: View {
 
     private var addToFavoritesMenu: some View {
         Button {
-            let isCurrentlyFavorited = libraryStore.isFavorite(id: track.id)
+            let isCurrentlyFavorited = libraryStore.isFavorite(id: song.id)
             dispatcher.execute(
                 .setFavorite(
-                    id: track.id,
+                    id: song.id,
                     isFavorited: !isCurrentlyFavorited
                 )
             )
         } label: {
-            let isFavorited = libraryStore.isFavorite(id: track.id)
+            let isFavorited = libraryStore.isFavorite(id: song.id)
             Label(
                 isFavorited ? "Remove from Favorites" : "Add to Favorites",
                 systemImage: isFavorited ? "star.slash" : "star"

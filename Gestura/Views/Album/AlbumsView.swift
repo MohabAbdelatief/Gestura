@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+internal import MusicKit
 
 struct AlbumsView: View {
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -23,7 +24,7 @@ struct AlbumsView: View {
         guard !searchText.isEmpty else { return musicLibrary.albums }
         return musicLibrary.albums.filter {
             $0.title.localizedCaseInsensitiveContains(searchText)
-                || $0.artist.localizedCaseInsensitiveContains(searchText)
+                || $0.artistName.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -46,6 +47,7 @@ struct AlbumsView: View {
                         NavigationLink(
                             destination: AlbumDetailView(
                                 viewModel: viewModel,
+                                musicLibrary: musicLibrary,
                                 album: album
                             )
                         ) {

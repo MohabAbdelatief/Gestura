@@ -5,13 +5,18 @@
 //  Created by Mohab Abdelatief on 08/05/2026.
 //
 
-internal import MediaPlayer
+internal import MusicKit
 import SwiftUI
 
 struct GenreRowView: View {
     // MARK: - PROPERTIES
 
     let genre: Genre
+    let musicLibrary: MusicLibrary
+
+    // MARK: - STATE
+
+    @State private var artwork: Artwork?
 
     // MARK: - VIEW
 
@@ -21,18 +26,18 @@ struct GenreRowView: View {
             Text(genre.name)
             Spacer()
         }
+        .task {
+            let songs = await musicLibrary.songs(in: genre)
+            artwork = songs.first(where: { $0.artwork != nil })?.artwork
+        }
     }
 
     // MARK: - HELPER VIEWS
 
     private var artworkThumbnail: some View {
         Group {
-            if let image = genre.artwork?.image(
-                at: CGSize(width: 44, height: 44)
-            ) {
-                Image(uiImage: image)
-                    .resizable()
-                    .frame(width: 44, height: 44)
+            if let artwork {
+                ArtworkImage(artwork, width: 44, height: 44)
                     .cornerRadius(6)
             } else {
                 RoundedRectangle(cornerRadius: 6)

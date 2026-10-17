@@ -5,11 +5,12 @@
 //  Created by Mohab Abdelatief on 18/04/2026.
 //
 import Foundation
+internal import MusicKit
 
 enum PlayerState {
     // MARK: - CASES
 
     case idle
-    case playing(Track)
-    case paused(Track)
+    case playing(Song)
+    case paused(Song)
 }
