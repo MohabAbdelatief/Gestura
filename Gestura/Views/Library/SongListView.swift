@@ -14,7 +14,7 @@ struct SongListView: View {
     @ObservedObject var viewModel: PlayerViewModel
     @ObservedObject var musicLibrary: MusicLibrary
     @AppStorage("songSortingOption") private var songSortingOption: SortOption =
-        .title
+        .dateAdded
 
     // MARK: - COMPUTED PROPERTIES
 

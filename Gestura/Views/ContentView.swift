@@ -124,6 +124,9 @@ struct ContentView: View {
             if hasCompletedOnboarding { musicLibrary.loadSongs() }
             viewModel.observePlayer()
         }
+        .task(id: musicLibrary.hasLoaded) {
+            await musicLibrary.observeSubscription()
+        }
     }
 }
 

@@ -17,6 +17,15 @@ struct SearchTabView: View {
     // MARK: - STATE
 
     @State private var searchText: String = ""
+    @State private var scope: SearchScope = .library
+    @State private var catalogResults: MusicCatalogSearchResponse?
+    @State private var isLoadingCatalog = false
+    @State private var showSubscriptionOffer = false
+
+    enum SearchScope {
+        case library
+        case appleMusic
+    }
 
     // MARK: - COMPUTED PROPERTIES
 
@@ -46,6 +55,26 @@ struct SearchTabView: View {
         }
     }
 
+    private var isCatalog: Bool {
+        scope == .appleMusic
+    }
+
+    private var songs: [Song] {
+        isCatalog ? Array(catalogResults?.songs ?? []) : filteredSongs
+    }
+
+    private var artists: [Artist] {
+        isCatalog ? Array(catalogResults?.artists ?? []) : filteredArtists
+    }
+
+    private var albums: [Album] {
+        isCatalog ? Array(catalogResults?.albums ?? []) : filteredAlbums
+    }
+
+    private var canPlay: Bool {
+        !isCatalog || musicLibrary.subscription?.canPlayCatalogContent == true
+    }
+
     // MARK: - VIEW
 
     var body: some View {
@@ -53,27 +82,24 @@ struct SearchTabView: View {
             Group {
                 if searchText.isEmpty {
                     ContentUnavailableView(
-                        "Search Your Library",
+                        isCatalog ? "Search Apple Music" : "Search Your Library",
                         systemImage: "magnifyingglass",
                         description: Text(
                             "Find songs by title, artist, or album."
                         )
                     )
-                } else if filteredSongs.isEmpty && filteredAlbums.isEmpty
-                    && filteredArtists.isEmpty
-                {
+                } else if isCatalog && isLoadingCatalog {
+                    ProgressView("Searching…")
+                } else if songs.isEmpty && albums.isEmpty && artists.isEmpty {
                     ContentUnavailableView.search(text: searchText)
 
                 } else {
                     List {
-                        if !filteredSongs.isEmpty {
+                        if !songs.isEmpty {
                             Section("Songs") {
-                                ForEach(filteredSongs) { song in
+                                ForEach(songs) { song in
                                     Button {
-                                        viewModel.play(
-                                            song,
-                                            in: filteredSongs
-                                        )
+                                        play(song)
                                     } label: {
                                         SongRowView(
                                             song: song,
@@ -84,12 +110,13 @@ struct SearchTabView: View {
                                 }
                             }
                         }
-                        if !filteredArtists.isEmpty {
+                        if !artists.isEmpty {
                             Section("Artists") {
-                                ForEach(filteredArtists) { artist in
+                                ForEach(artists) { artist in
                                     NavigationLink(
                                         destination: ArtistDetailView(
                                             artist: artist,
+                                            isCatalog: isCatalog,
                                             viewModel: viewModel,
                                             musicLibrary: musicLibrary
                                         )
@@ -97,15 +124,15 @@ struct SearchTabView: View {
                                 }
                             }
                         }
-                        if !filteredAlbums.isEmpty {
+                        if !albums.isEmpty {
                             Section("Albums") {
-                                ForEach(filteredAlbums) { album in
+                                ForEach(albums) { album in
                                     NavigationLink(
                                         destination: AlbumDetailView(
                                             viewModel: viewModel,
                                             musicLibrary: musicLibrary,
-                                            album: album
-
+                                            album: album,
+                                            isCatalog: isCatalog
                                         )
                                     ) {
                                         AlbumRowView(album: album)
@@ -119,6 +146,37 @@ struct SearchTabView: View {
             }
             .navigationTitle("Search")
             .searchable(text: $searchText)
+            .searchScopes($scope, activation: .onSearchPresentation) {
+                Text("Library").tag(SearchScope.library)
+                Text("Apple Music").tag(SearchScope.appleMusic)
+            }
+            .task(id: "\(scope)-\(searchText)") {
+                guard isCatalog, !searchText.isEmpty else {
+                    isLoadingCatalog = false
+                    return
+                }
+                isLoadingCatalog = true
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
+                let results = await musicLibrary.searchCatalog(for: searchText)
+                guard !Task.isCancelled else { return }
+                catalogResults = results
+                isLoadingCatalog = false
+            }
+            .musicSubscriptionOffer(
+                isPresented: $showSubscriptionOffer,
+                options: .gestura
+            )
+        }
+    }
+
+    // MARK: - HELPERS
+
+    private func play(_ song: Song) {
+        if canPlay {
+            viewModel.play(song, in: songs)
+        } else {
+            showSubscriptionOffer = true
         }
     }
 

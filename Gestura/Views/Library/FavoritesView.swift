@@ -17,7 +17,7 @@ struct FavoritesView: View {
 
     // MARK: - STATE
     @AppStorage("favoritesSortingOption") private var favoritesSortingOption:
-        SortOption = .title
+        SortOption = .dateAdded
     @State private var searchText = ""
 
     // MARK: - COMPUTED PROPERTIES
@@ -44,10 +44,7 @@ struct FavoritesView: View {
                 ($0.albumTitle ?? "") < ($1.albumTitle ?? "")
             }
         case .dateAdded:
-            return filteredSongs.sorted {
-                ($1.libraryAddedDate ?? .distantPast)
-                    < ($0.libraryAddedDate ?? .distantPast)
-            }
+            return filteredSongs
         }
     }
 

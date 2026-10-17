@@ -12,9 +12,21 @@ struct ArtistDetailView: View {
     // MARK: - PROPERTIES
 
     let artist: Artist
+    var isCatalog = false
+
+    // MARK: - STATE
+
+    @State private var catalogSongs: [Song] = []
+    @State private var showSubscriptionOffer = false
+
+    // MARK: - COMPUTED PROPERTIES
 
     private var songs: [Song] {
-        musicLibrary.songs(by: artist)
+        isCatalog ? catalogSongs : musicLibrary.songs(by: artist)
+    }
+
+    private var canPlay: Bool {
+        !isCatalog || musicLibrary.subscription?.canPlayCatalogContent == true
     }
 
     // MARK: - PROPERTY WRAPPED OBJECTS
@@ -30,9 +42,12 @@ struct ArtistDetailView: View {
                 artworkHeader
                 ForEach(songs) { song in
                     Button {
-                        viewModel.play(song, in: songs)
+                        play(song)
                     } label: {
-                        SongRowView(song: song, viewModel: viewModel)
+                        SongRowView(
+                            song: song,
+                            viewModel: viewModel
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -41,7 +56,28 @@ struct ArtistDetailView: View {
         }
         .navigationTitle(artist.name)
         .toolbar {
-            PlayShuffleToolbarButtons(songs: songs, viewModel: viewModel)
+            if canPlay {
+                PlayShuffleToolbarButtons(songs: songs, viewModel: viewModel)
+            }
+        }
+        .task {
+            if isCatalog {
+                catalogSongs = await musicLibrary.catalogSongs(by: artist)
+            }
+        }
+        .musicSubscriptionOffer(
+            isPresented: $showSubscriptionOffer,
+            options: .gestura
+        )
+    }
+
+    // MARK: - HELPERS
+
+    private func play(_ song: Song) {
+        if canPlay {
+            viewModel.play(song, in: songs)
+        } else {
+            showSubscriptionOffer = true
         }
     }
 

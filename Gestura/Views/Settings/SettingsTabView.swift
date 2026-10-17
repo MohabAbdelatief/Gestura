@@ -16,7 +16,7 @@ struct SettingsTabView: View {
     @AppStorage(GesturaSettings.enabledKey) private var gesturaEnabled: Bool =
         GesturaSettings.enabledDefault
     @AppStorage("songSortingOption") private var songSortingOption: SortOption =
-        .title
+        .dateAdded
     @AppStorage(RecognizerSensitivity.appStorageKey)
     private var recognizerSensitivity: RecognizerSensitivity = .standard
     @AppStorage("detectionChimeEnabled") private var detectionChimeEnabled: Bool = false

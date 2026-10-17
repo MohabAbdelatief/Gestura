@@ -12,7 +12,7 @@ internal import MusicKit
 class LibraryStore: ObservableObject {
     // MARK: - PROPERTY WRAPPED OBJECTS
 
-    @Published var favoriteIDs: Set<MusicItemID> = []
+    @Published var favoriteIDs: [MusicItemID] = []
     @Published var recentlyPlayedIDs: [MusicItemID] = []
 
     // MARK: - SHARED
@@ -30,7 +30,7 @@ class LibraryStore: ObservableObject {
 
     func loadFavorites() {
         let saved = defaults.stringArray(forKey: favoritesKey) ?? []
-        favoriteIDs = Set(saved.map { MusicItemID($0) })
+        favoriteIDs = saved.map { MusicItemID($0) }
     }
 
     func loadRecentlyPlayed() {
@@ -39,21 +39,22 @@ class LibraryStore: ObservableObject {
     }
 
     func addFavorite(id: MusicItemID) {
-        favoriteIDs.insert(id)
+        guard !favoriteIDs.contains(id) else { return }
+        favoriteIDs.insert(id, at: 0)
         defaults.set(favoriteIDs.map(\.rawValue), forKey: favoritesKey)
     }
 
     func removeFavorite(id: MusicItemID) {
-        favoriteIDs.remove(id)
+        favoriteIDs.removeAll { $0 == id }
         defaults.set(favoriteIDs.map(\.rawValue), forKey: favoritesKey)
     }
+
     func toggleFavorite(id: MusicItemID) {
-        if favoriteIDs.contains(id) {
-            favoriteIDs.remove(id)
+        if isFavorite(id: id) {
+            removeFavorite(id: id)
         } else {
-            favoriteIDs.insert(id)
+            addFavorite(id: id)
         }
-        defaults.set(favoriteIDs.map(\.rawValue), forKey: favoritesKey)
     }
 
     func addToRecentlyPlayed(id: MusicItemID) {

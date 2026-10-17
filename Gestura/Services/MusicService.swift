@@ -68,6 +68,48 @@ class MusicService {
         return Array(response.items)
     }
 
+    func fetchSongs(in genre: Genre) async throws -> [Song] {
+        var request = MusicLibraryRequest<Song>()
+        request.filter(matching: \.genres, contains: genre)
+        let response = try await request.response()
+        return Array(response.items)
+    }
+
+    // MARK: - APPLE MUSIC CATALOG
+
+    func searchCatalog(for term: String) async throws
+        -> MusicCatalogSearchResponse
+    {
+        var request = MusicCatalogSearchRequest(
+            term: term,
+            types: [Song.self, Album.self, Artist.self]
+        )
+        request.limit = 25
+        return try await request.response()
+    }
+
+    func fetchCatalogSongs(in album: Album) async throws -> [Song] {
+        let detailedAlbum = try await album.with([.tracks])
+        return detailedAlbum.tracks?.compactMap { track in
+            guard case .song(let song) = track else { return nil }
+            return song
+        } ?? []
+    }
+
+    func fetchCatalogSongs(ids: [MusicItemID]) async throws -> [Song] {
+        let request = MusicCatalogResourceRequest<Song>(
+            matching: \.id,
+            memberOf: ids
+        )
+        let response = try await request.response()
+        return Array(response.items)
+    }
+
+    func fetchCatalogSongs(by artist: Artist) async throws -> [Song] {
+        let detailedArtist = try await artist.with([.topSongs])
+        return Array(detailedArtist.topSongs ?? [])
+    }
+
     // MARK: - PLAYBACK
 
     func play(_ songs: [Song], startingAt index: Int) {

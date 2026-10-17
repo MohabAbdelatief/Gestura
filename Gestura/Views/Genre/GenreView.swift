@@ -51,7 +51,7 @@ struct GenreView: View {
                                 musicLibrary: musicLibrary
                             )
                         ) {
-                            GenreRowView(genre: genre)
+                            GenreRowView(genre: genre, musicLibrary: musicLibrary)
                         }
                     }
                 }

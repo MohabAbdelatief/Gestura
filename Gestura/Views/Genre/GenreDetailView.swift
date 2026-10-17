@@ -13,9 +13,7 @@ struct GenreDetailView: View {
 
     let genre: Genre
 
-    private var songs: [Song] {
-        musicLibrary.songs(in: genre)
-    }
+    @State private var songs: [Song] = []
 
     // MARK: - PROPERTY WRAPPED OBJECTS
 
@@ -40,6 +38,9 @@ struct GenreDetailView: View {
             .listStyle(.insetGrouped)
         }
         .navigationTitle(genre.name)
+        .task {
+            songs = await musicLibrary.songs(in: genre)
+        }
     }
 
     // MARK: - HELPER VIEWS

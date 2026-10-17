@@ -46,14 +46,7 @@ class VolumeManager: NSObject, ObservableObject {
     }
 
     // MARK: - HELPERS
-    /// Seeds the published volume from the system.
-    ///
-    /// Deliberately reads without activating a session. `MPMusicPlayerController`
-    /// plays out of process, so it owns audio from our point of view — claiming
-    /// a non-mixing `.playback` session here only picks a fight we lose (the
-    /// console showed the session being interrupted the moment music started),
-    /// and it would cut off whatever the user already had playing at launch.
-    /// `outputVolume` reads fine without it.
+
     private func readInitialVolume() {
         volume = AVAudioSession.sharedInstance().outputVolume
     }

@@ -37,7 +37,7 @@ struct PlaylistDetailView: View {
 
     private var songs: [Song] {
         playlist.songIDs.compactMap { id in
-            musicLibrary.songsByID[MusicItemID(id)]
+            musicLibrary.song(for: MusicItemID(id))
         }
     }
 
@@ -56,6 +56,11 @@ struct PlaylistDetailView: View {
             }
         }
         .navigationTitle(playlist.name)
+        .task(id: playlist.songIDs) {
+            await musicLibrary.loadCatalogSongs(
+                ids: playlist.songIDs.map { MusicItemID($0) }
+            )
+        }
         .toolbar {
             if !songs.isEmpty {
                 ToolbarItemGroup(placement: .topBarLeading) {

@@ -17,9 +17,21 @@ struct AlbumDetailView: View {
     // MARK: - PROPERTIES
 
     let album: Album
+    var isCatalog = false
+
+    // MARK: - STATE
+
+    @State private var catalogSongs: [Song] = []
+    @State private var showSubscriptionOffer = false
+
+    // MARK: - COMPUTED PROPERTIES
 
     private var songs: [Song] {
-        musicLibrary.songs(in: album)
+        isCatalog ? catalogSongs : musicLibrary.songs(in: album)
+    }
+
+    private var canPlay: Bool {
+        !isCatalog || musicLibrary.subscription?.canPlayCatalogContent == true
     }
 
     // MARK: - VIEW
@@ -31,9 +43,12 @@ struct AlbumDetailView: View {
                     .shadow(radius: 6)
                 ForEach(songs) { song in
                     Button {
-                        viewModel.play(song, in: songs)
+                        play(song)
                     } label: {
-                        SongRowView(song: song, viewModel: viewModel)
+                        SongRowView(
+                            song: song,
+                            viewModel: viewModel
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -42,10 +57,31 @@ struct AlbumDetailView: View {
         }
         .navigationTitle(album.title)
         .toolbar {
-            PlayShuffleToolbarButtons(
-                songs: songs,
-                viewModel: viewModel
-            )
+            if canPlay {
+                PlayShuffleToolbarButtons(
+                    songs: songs,
+                    viewModel: viewModel
+                )
+            }
+        }
+        .task {
+            if isCatalog {
+                catalogSongs = await musicLibrary.catalogSongs(in: album)
+            }
+        }
+        .musicSubscriptionOffer(
+            isPresented: $showSubscriptionOffer,
+            options: .gestura
+        )
+    }
+
+    // MARK: - HELPERS
+
+    private func play(_ song: Song) {
+        if canPlay {
+            viewModel.play(song, in: songs)
+        } else {
+            showSubscriptionOffer = true
         }
     }
 

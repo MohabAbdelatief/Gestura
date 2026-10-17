@@ -48,7 +48,6 @@ struct SongRowView: View {
                 }
             )
             addToFavoritesMenu
-
         }
         .alert("New Playlist", isPresented: $showNewPlaylistAlert) {
             TextField("Playlist Name", text: $newPlaylistName)

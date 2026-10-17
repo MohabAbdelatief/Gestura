@@ -19,12 +19,7 @@ struct HomeView: View {
 
     // MARK: - SUBSCRIPTION
 
-    @State private var subscription: MusicSubscription?
     @State private var showSubscriptionOffer = false
-
-    private let subscriptionOfferOptions = MusicSubscriptionOffer.Options(
-        messageIdentifier: .playMusic
-    )
 
     // MARK: - VIEW
 
@@ -51,7 +46,9 @@ struct HomeView: View {
             }
             .padding()
 
-            if let subscription, subscription.canBecomeSubscriber {
+            if let subscription = musicLibrary.subscription,
+                subscription.canBecomeSubscriber
+            {
                 musicSubscriptionButton
             }
 
@@ -81,12 +78,6 @@ struct HomeView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsTabView(viewModel: viewModel)
             }
-            .task(id: musicLibrary.hasLoaded) {
-                subscription = try? await MusicSubscription.current
-                for await update in MusicSubscription.subscriptionUpdates {
-                    subscription = update
-                }
-            }
         }
     }
 
@@ -99,7 +90,7 @@ struct HomeView: View {
         .buttonStyle(.borderedProminent)
         .musicSubscriptionOffer(
             isPresented: $showSubscriptionOffer,
-            options: subscriptionOfferOptions
+            options: .gestura
         )
     }
 

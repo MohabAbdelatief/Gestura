@@ -15,6 +15,7 @@ class MusicLibrary: ObservableObject {
 
     private let libraryStore = LibraryStore.shared
     private let musicService = MusicService.shared
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - PUBLISHED PROPERTIES
 
@@ -34,20 +35,33 @@ class MusicLibrary: ObservableObject {
     @Published private(set) var artists: [Artist] = []
     @Published private(set) var albums: [Album] = []
     @Published private(set) var genres: [Genre] = []
+    @Published private(set) var subscription: MusicSubscription?
 
     private(set) var songsByID: [MusicItemID: Song] = [:]
+    @Published private(set) var catalogSongsByID: [MusicItemID: Song] = [:]
+
+    // MARK: - INIT
+
+    init() {
+        libraryStore.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                Task { await self?.loadSavedCatalogSongs() }
+            }
+            .store(in: &cancellables)
+    }
 
     // MARK: - COMPUTED PROPERTIES
 
     var recentlyPlayedSongs: [Song] {
         libraryStore.recentlyPlayedIDs.compactMap { id in
-            songsByID[id]
+            song(for: id)
         }
     }
 
     var favoriteSongs: [Song] {
         libraryStore.favoriteIDs.compactMap { id in
-            songsByID[id]
+            song(for: id)
         }
     }
 
@@ -79,7 +93,33 @@ class MusicLibrary: ObservableObject {
                 log("Fetching songs failed: \(error)")
             }
             hasLoaded = true
+            await loadSavedCatalogSongs()
         }
+    }
+
+    /// Library songs first, then songs fetched from Apple Music.
+    func song(for id: MusicItemID) -> Song? {
+        songsByID[id] ?? catalogSongsByID[id]
+    }
+
+    /// Fetches the Apple Music songs among `ids` that aren't loaded yet.
+    func loadCatalogSongs(ids: [MusicItemID]) async {
+        guard hasLoaded else { return }
+        let missingIDs = ids.filter { song(for: $0) == nil }
+        guard !missingIDs.isEmpty else { return }
+        do {
+            let fetched = try await musicService.fetchCatalogSongs(ids: missingIDs)
+            for song in fetched {
+                catalogSongsByID[song.id] = song
+            }
+        } catch {
+            log("Fetching saved Apple Music songs failed: \(error)")
+        }
+    }
+
+    private func loadSavedCatalogSongs() async {
+        let ids = libraryStore.favoriteIDs + libraryStore.recentlyPlayedIDs
+        await loadCatalogSongs(ids: ids)
     }
 
     func songs(in album: Album) -> [Song] {
@@ -92,8 +132,47 @@ class MusicLibrary: ObservableObject {
         songs.filter { $0.artistName == artist.name }
     }
 
-    func songs(in genre: Genre) -> [Song] {
-        songs.filter { $0.genreNames.contains(genre.name) }
+    func songs(in genre: Genre) async -> [Song] {
+        do {
+            return try await musicService.fetchSongs(in: genre)
+        } catch {
+            log("Fetching genre songs failed: \(error)")
+            return []
+        }
+    }
+
+    func catalogSongs(in album: Album) async -> [Song] {
+        do {
+            return try await musicService.fetchCatalogSongs(in: album)
+        } catch {
+            log("Fetching album songs failed: \(error)")
+            return []
+        }
+    }
+
+    func catalogSongs(by artist: Artist) async -> [Song] {
+        do {
+            return try await musicService.fetchCatalogSongs(by: artist)
+        } catch {
+            log("Fetching artist songs failed: \(error)")
+            return []
+        }
+    }
+
+    func searchCatalog(for term: String) async -> MusicCatalogSearchResponse? {
+        do {
+            return try await musicService.searchCatalog(for: term)
+        } catch {
+            log("Apple Music search failed: \(error)")
+            return nil
+        }
+    }
+
+    func observeSubscription() async {
+        subscription = try? await MusicSubscription.current
+        for await update in MusicSubscription.subscriptionUpdates {
+            subscription = update
+        }
     }
 
     func addToRecentlyPlayed(id: MusicItemID) {
