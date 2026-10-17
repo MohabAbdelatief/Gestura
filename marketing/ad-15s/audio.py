@@ -76,8 +76,6 @@ def note(name, octave):
     names = {'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11}
     return 440*2**((names[name]-9)/12 + (octave-4))
 
-# ---- arrangement ----
-# chords: Am | F | C | G  (one bar = 4 beats), starting at the reveal (3.1 s)
 prog = [('A',['A','C','E']), ('F',['F','A','C']), ('C',['C','E','G']), ('G',['G','B','D'])]
 BAR = 4*BEAT
 music_start = 3.1
@@ -111,7 +109,6 @@ for t0 in (7.0, 8.9, 10.7): blip(t0)
 # final hit on the end card
 kick(14.05); pad(14.05, [note('A',3), note('C',4), note('E',4), note('A',4)], 1.0, 0.25)
 
-# ---- master ----
 out = []
 for k in range(N):
     t = k/SR
